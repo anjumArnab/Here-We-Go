@@ -38,8 +38,7 @@ class ConnectedUser {
     LocationStatus status = _mapLocationStatus(user.locationStatus ?? 'ready');
 
     // Generate avatar color if not provided
-    Color userAvatarColor =
-        avatarColor ?? _generateAvatarColor(user.name ?? '');
+    Color userAvatarColor = avatarColor ?? generateAvatarColor(user.name ?? '');
 
     return ConnectedUser(
       socketId: user.socketId ?? '',
@@ -81,7 +80,7 @@ class ConnectedUser {
   }
 
   // Helper method to generate avatar color based on name
-  static Color _generateAvatarColor(String name) {
+  static Color generateAvatarColor(String name) {
     const List<Color> colors = [
       Color(0xFF4A90E2),
       Color(0xFFFF9500),
