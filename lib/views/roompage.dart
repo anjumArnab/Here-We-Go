@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:herewego/models/connected_user.dart';
-import 'package:herewego/services/location_service.dart';
-import 'package:herewego/widgets/user_tile.dart';
+import '../models/connected_user.dart';
+import '../services/location_service.dart';
+import '../widgets/user_tile.dart';
 import '../views/map_view.dart';
 import '../views/settings_page.dart';
 import '../widgets/action_button.dart';
