@@ -3,9 +3,14 @@ import 'package:flutter/material.dart';
 class InputField extends StatelessWidget {
   final String label;
   final TextEditingController controller;
+  final bool enabled;
 
-  const InputField({Key? key, required this.label, required this.controller})
-    : super(key: key);
+  const InputField({
+    super.key,
+    required this.label,
+    required this.controller,
+    this.enabled = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,12 +30,13 @@ class InputField extends StatelessWidget {
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: enabled ? Colors.grey[50] : Colors.grey[200],
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.grey[300]!),
           ),
           child: TextField(
             controller: controller,
+            enabled: enabled,
             style: const TextStyle(fontSize: 16, color: Colors.black87),
             decoration: InputDecoration(
               border: InputBorder.none,
