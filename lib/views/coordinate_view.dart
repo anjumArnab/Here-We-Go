@@ -3,13 +3,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:herewego/widgets/app_snack_bar.dart';
+import '../views/map_view.dart';
+import '../widgets/app_snack_bar.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/action_button.dart';
 import '../models/connection_status.dart';
 import '../models/user_location.dart';
 import '../services/location_service.dart';
-import '../views/map_view.dart';
 
 class CoordinateView extends StatefulWidget {
   const CoordinateView({super.key});
