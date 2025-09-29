@@ -1,9 +1,11 @@
-// ignore_for_file: deprecated_member_use
-
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:geolocator/geolocator.dart';
+import '../services/location_service.dart';
+import '../services/route_service.dart';
+import '../services/user_location_handler.dart';
+import '../models/user_location.dart';
+import '../models/connection_status.dart';
 
 class MapView extends StatefulWidget {
   const MapView({super.key});
@@ -13,101 +15,530 @@ class MapView extends StatefulWidget {
 }
 
 class _MapViewState extends State<MapView> {
+  // Map and UI state
   final MapController _mapController = MapController();
-  LatLng? _currentLocation;
-  bool _isLoading = true;
-  String? _errorMessage;
+  List<Marker> _markers = [];
+  List<Polyline> _polylines = [];
+  bool isLoadingUserLocations = true;
+  bool isLoadingRoutes = false;
   bool _locationPermissionGranted = false;
+
+  // Services
+  final LocationService _locationService = LocationService();
+  final RouteService _routeService = RouteService();
+  final UserLocationHandler _userLocationHandler = UserLocationHandler();
+
+  // Connection and user data
+  bool _isConnected = false;
+  String? _currentUserId;
+  Map<String, UserLocation> _userLocations = {};
+  List<String> _roomUsers = [];
+
+  // Route display settings
+  bool _showRoutes = false;
+  List<RouteData> _currentRoutes = [];
+
+  // Stream subscriptions
+  StreamSubscription<ConnectionStatus>? _connectionSubscription;
+  StreamSubscription<Map<String, UserLocation>>? _allLocationsSubscription;
+  StreamSubscription<UserLocation>? _locationUpdateSubscription;
+  StreamSubscription<List<String>>? _roomUsersSubscription;
+  StreamSubscription<String>? _errorSubscription;
 
   @override
   void initState() {
     super.initState();
-    _requestLocationAndSetupMap();
+    _setupLocationServiceListeners();
+    _checkConnectionStatus();
+    _getCurrentLocation();
   }
 
-  Future<void> _requestLocationAndSetupMap() async {
-    try {
-      // Check if location services are enabled
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
+  void _setupLocationServiceListeners() {
+    // Listen to connection status changes
+    _connectionSubscription = _locationService.connectionStream.listen((
+      connectionStatus,
+    ) {
+      if (mounted) {
         setState(() {
-          _errorMessage =
-              'Location services are disabled. Please enable location services.';
-          _isLoading = false;
+          _isConnected = connectionStatus.isConnected;
+          _currentUserId = connectionStatus.userId;
+          _roomUsers = connectionStatus.roomUsers;
         });
-        _setDefaultLocation();
-        return;
-      }
 
-      // Check location permission
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          setState(() {
-            _errorMessage =
-                'Location permission denied. Showing default location.';
-            _isLoading = false;
-          });
-          _setDefaultLocation();
-          return;
+        if (!connectionStatus.isConnected) {
+          _showError('Disconnected from server');
         }
       }
+    });
 
-      if (permission == LocationPermission.deniedForever) {
+    // Listen to all locations updates
+    _allLocationsSubscription = _locationService.allLocationsStream.listen((
+      locations,
+    ) {
+      if (mounted) {
         setState(() {
-          _errorMessage =
-              'Location permission permanently denied. Please enable in settings.';
-          _isLoading = false;
+          _userLocations = locations;
+          isLoadingUserLocations = false;
         });
-        _setDefaultLocation();
-        return;
+        _updateUserMarkers();
+
+        // Update routes if they're currently shown
+        if (_showRoutes && _userLocationHandler.currentLocation != null) {
+          _updateRoutes();
+        }
+      }
+    });
+
+    // Listen to individual location updates
+    _locationUpdateSubscription = _locationService.locationUpdateStream.listen((
+      location,
+    ) {
+      if (mounted) {
+        _showLocationUpdateNotification(location);
+      }
+    });
+
+    // Listen to room users changes
+    _roomUsersSubscription = _locationService.roomUsersStream.listen((users) {
+      if (mounted) {
+        setState(() {
+          _roomUsers = users;
+        });
+      }
+    });
+
+    // Listen to error messages
+    _errorSubscription = _locationService.errorStream.listen((error) {
+      if (mounted) {
+        _showError(error);
+      }
+    });
+  }
+
+  void _checkConnectionStatus() {
+    setState(() {
+      _isConnected = _locationService.isConnected;
+      _currentUserId = _locationService.currentUserId;
+      _roomUsers = _locationService.roomUsers;
+      _userLocations = _locationService.userLocations;
+    });
+
+    if (_isConnected) {
+      // Request all current locations
+      _locationService.requestAllLocations();
+    }
+  }
+
+  void _showLocationUpdateNotification(UserLocation location) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.location_on, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '${location.userId} updated their location',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.blue.shade600,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _getCurrentLocation() async {
+    final result = await _userLocationHandler.getCurrentLocation();
+
+    if (mounted) {
+      setState(() {
+        _locationPermissionGranted = result.isSuccess;
+      });
+
+      if (!result.isSuccess && result.error != null) {
+        _showError(result.error!);
       }
 
-      // Permission granted, get current location
-      _locationPermissionGranted = true;
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
+      // Move camera to current location
+      if (_userLocationHandler.currentLocation != null) {
+        _mapController.move(_userLocationHandler.currentLocation!, 15.0);
+      }
+
+      // Update user markers
+      _updateUserMarkers();
+    }
+  }
+
+  void _updateUserMarkers() {
+    try {
+      final markers = _userLocationHandler.generateUserMarkers(
+        userLocations: _userLocations,
+        currentUserId: _currentUserId,
+        hasLocationPermission: _locationPermissionGranted,
+        onMarkerTap: _showUserInfo,
       );
 
       setState(() {
-        _currentLocation = LatLng(position.latitude, position.longitude);
-        _isLoading = false;
-        _errorMessage = null;
+        _markers = markers;
       });
 
-      // Center map on user location with smooth animation
-      _mapController.move(_currentLocation!, 15.0);
+      // Show all locations on map if there are multiple users
+      if (_userLocations.length > 1) {
+        _showAllLocations();
+      }
     } catch (e) {
+      debugPrint('Error updating user markers: $e');
+      _showError('Error updating markers: $e');
+    }
+  }
+
+  Future<void> _updateRoutes() async {
+    if (!_showRoutes ||
+        _userLocationHandler.currentLocation == null ||
+        _userLocations.isEmpty) {
       setState(() {
-        _errorMessage = 'Failed to get location: ${e.toString()}';
-        _isLoading = false;
+        _polylines.clear();
+        _currentRoutes.clear();
       });
-      _setDefaultLocation();
+      return;
+    }
+
+    setState(() {
+      isLoadingRoutes = true;
+    });
+
+    try {
+      final routes = await _routeService.generateRoutes(
+        currentLocation: _userLocationHandler.currentLocation!,
+        userLocations: _userLocations,
+        currentUserId: _currentUserId,
+      );
+
+      // Convert routes to polylines
+      final polylines =
+          routes.map((route) {
+            return Polyline(
+              points: route.points,
+              color: route.color,
+              strokeWidth: route.strokeWidth,
+            );
+          }).toList();
+
+      setState(() {
+        _polylines = polylines;
+        _currentRoutes = routes;
+        isLoadingRoutes = false;
+      });
+    } catch (e) {
+      debugPrint('Error updating routes: $e');
+      setState(() {
+        isLoadingRoutes = false;
+      });
+      _showError('Error loading routes: $e');
     }
   }
 
-  void _setDefaultLocation() {
-    // Set a default location (London, UK) when location access fails
-    setState(() {
-      _currentLocation = const LatLng(51.5074, -0.1278);
-      _isLoading = false;
-    });
-  }
-
-  Future<void> _retryLocationRequest() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    await _requestLocationAndSetupMap();
-  }
-
-  void _centerOnUserLocation() {
-    if (_currentLocation != null) {
-      _mapController.move(_currentLocation!, 15.0);
+  void _showUserInfo(String userId, UserLocation userLocation) {
+    if (_userLocationHandler.currentLocation == null) {
+      // Just show basic user info
+      _showUserBasicInfo(userId, userLocation);
+      return;
     }
+
+    final routeInfo = _routeService.getRouteInfo(
+      userId: userId,
+      userLocation: userLocation,
+      currentLocation: _userLocationHandler.currentLocation!,
+    );
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.person, color: Colors.blue.shade600),
+                const SizedBox(width: 8),
+                Text('User: $userId'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInfoRow(
+                  'Location',
+                  '${userLocation.latitude.toStringAsFixed(6)}, ${userLocation.longitude.toStringAsFixed(6)}',
+                ),
+                _buildInfoRow('Last Updated', routeInfo.lastUpdated),
+                _buildInfoRow('Direct Distance', routeInfo.directDistance),
+                if (_showRoutes) ...[
+                  const Divider(),
+                  _buildInfoRow('Travel Mode', routeInfo.travelMode),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _focusOnUser(userLocation);
+                },
+                child: const Text('Focus on Map'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _showUserBasicInfo(String userId, UserLocation userLocation) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.person, color: Colors.blue.shade600),
+                const SizedBox(width: 8),
+                Text('User: $userId'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInfoRow(
+                  'Location',
+                  '${userLocation.latitude.toStringAsFixed(6)}, ${userLocation.longitude.toStringAsFixed(6)}',
+                ),
+                _buildInfoRow(
+                  'Last Updated',
+                  _userLocationHandler.formatTimestamp(userLocation.timestamp),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _focusOnUser(userLocation);
+                },
+                child: const Text('Focus on Map'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _toggleRoutes() {
+    setState(() {
+      _showRoutes = !_showRoutes;
+    });
+
+    if (_showRoutes) {
+      _updateRoutes();
+    } else {
+      setState(() {
+        _polylines.clear();
+        _currentRoutes.clear();
+      });
+    }
+  }
+
+  void _showRoutesSettings() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Route Settings'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Travel Mode:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                ...['driving', 'walking', 'cycling'].map(
+                  (mode) => RadioListTile<String>(
+                    title: Text(mode.toUpperCase()),
+                    value: mode,
+                    groupValue: _routeService.routeMode,
+                    onChanged: (value) {
+                      setState(() {
+                        _routeService.setRouteMode(value!);
+                      });
+                      if (_showRoutes) {
+                        _updateRoutes();
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Show Routes To:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                CheckboxListTile(
+                  title: const Text('All Users'),
+                  value: _routeService.selectedUsers.isEmpty,
+                  onChanged: (value) {
+                    setState(() {
+                      if (value == true) {
+                        _routeService.clearSelectedUsers();
+                      } else {
+                        _routeService.setSelectedUsers(
+                          _userLocations.keys
+                              .where((userId) => userId != _currentUserId)
+                              .toList(),
+                        );
+                      }
+                    });
+                    if (_showRoutes) {
+                      _updateRoutes();
+                    }
+                  },
+                ),
+                ..._userLocations.keys
+                    .where((userId) => userId != _currentUserId)
+                    .map(
+                      (userId) => CheckboxListTile(
+                        title: Text(userId),
+                        value:
+                            _routeService.selectedUsers.isEmpty ||
+                            _routeService.selectedUsers.contains(userId),
+                        onChanged:
+                            _routeService.selectedUsers.isEmpty
+                                ? null
+                                : (value) {
+                                  setState(() {
+                                    if (value == true) {
+                                      _routeService.addSelectedUser(userId);
+                                    } else {
+                                      _routeService.removeSelectedUser(userId);
+                                    }
+                                  });
+                                  if (_showRoutes) {
+                                    _updateRoutes();
+                                  }
+                                },
+                      ),
+                    ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Done'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              '$label:',
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+          Expanded(
+            child: Text(value, style: TextStyle(color: Colors.grey.shade700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _focusOnUser(UserLocation userLocation) {
+    final focusLocation = _userLocationHandler.getFocusLocationForUser(
+      userLocation,
+    );
+    _mapController.move(focusLocation, 16.0);
+  }
+
+  void _showAllLocations() {
+    final bounds = _userLocationHandler.calculateBoundsForAllLocations(
+      userLocations: _userLocations,
+    );
+
+    if (bounds != null) {
+      _mapController.fitCamera(
+        CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)),
+      );
+    } else if (_userLocationHandler.currentLocation != null) {
+      _mapController.move(_userLocationHandler.currentLocation!, 15.0);
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(child: Text(message)),
+            ],
+          ),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  void _refreshData() async {
+    // Refresh current location
+    await _getCurrentLocation();
+
+    // Request fresh user locations from server
+    if (_isConnected) {
+      _locationService.requestAllLocations();
+    }
+
+    setState(() {
+      isLoadingUserLocations = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    // Cancel stream subscriptions
+    _connectionSubscription?.cancel();
+    _allLocationsSubscription?.cancel();
+    _locationUpdateSubscription?.cancel();
+    _roomUsersSubscription?.cancel();
+    _errorSubscription?.cancel();
+
+    // Dispose services
+    _routeService.dispose();
+    _userLocationHandler.dispose();
+
+    super.dispose();
   }
 
   @override
@@ -115,154 +546,262 @@ class _MapViewState extends State<MapView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Map View'),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.green.shade600,
         foregroundColor: Colors.white,
-        elevation: 2,
-      ),
-      body: Stack(
-        children: [
-          // Map Widget
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _currentLocation ?? const LatLng(51.5074, -0.1278),
-              initialZoom: _currentLocation != null ? 15.0 : 5.0,
-              minZoom: 3.0,
-              maxZoom: 18.0,
-              interactionOptions: InteractionOptions(
-                flags: InteractiveFlag.all,
-              ),
-            ),
-            children: [
-              // OpenStreetMap Tile Layer
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.app',
-                maxZoom: 18,
-                subdomains: const ['a', 'b', 'c'],
-              ),
-              // Marker Layer
-              if (_currentLocation != null)
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: _currentLocation!,
-                      width: 60,
-                      height: 60,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color:
-                              _locationPermissionGranted
-                                  ? Colors.blue.withOpacity(0.3)
-                                  : Colors.grey.withOpacity(0.3),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color:
-                                _locationPermissionGranted
-                                    ? Colors.blue
-                                    : Colors.grey,
-                            width: 3,
-                          ),
-                        ),
-                        child: Icon(
-                          _locationPermissionGranted
-                              ? Icons.my_location
-                              : Icons.location_on,
-                          color:
-                              _locationPermissionGranted
-                                  ? Colors.blue
-                                  : Colors.grey,
-                          size: 30,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-            ],
+        actions: [
+          // Routes toggle button
+          IconButton(
+            onPressed: _userLocations.isNotEmpty ? _toggleRoutes : null,
+            icon: Icon(_showRoutes ? Icons.route : Icons.route_outlined),
+            tooltip: _showRoutes ? 'Hide Routes' : 'Show Routes',
           ),
-
-          // Loading Indicator
-          if (_isLoading)
-            Container(
-              color: Colors.black26,
-              child: const Center(
-                child: Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(20.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Getting your location...'),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-          // Error Message
-          if (_errorMessage != null && !_isLoading)
-            Positioned(
-              top: 16,
-              left: 16,
-              right: 16,
-              child: Card(
-                color: Colors.orange.shade100,
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.warning, color: Colors.orange.shade700),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'Location Notice',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () {
-                              setState(() {
-                                _errorMessage = null;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                      Text(_errorMessage!),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: _retryLocationRequest,
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+          // Routes settings
+          if (_showRoutes)
+            IconButton(
+              onPressed: _showRoutesSettings,
+              icon: const Icon(Icons.settings),
+              tooltip: 'Route Settings',
             ),
         ],
       ),
-      floatingActionButton:
-          _currentLocation != null
-              ? FloatingActionButton(
-                shape: CircleBorder(),
-                backgroundColor:
-                    _locationPermissionGranted ? Colors.blue : Colors.grey,
-                onPressed: _centerOnUserLocation,
-                tooltip: 'Center on my location',
-                child: Icon(
-                  _locationPermissionGranted
-                      ? Icons.my_location
-                      : Icons.location_on,
+      body:
+          _userLocationHandler.isLoadingLocation ||
+                  _userLocationHandler.currentLocation == null
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      color: Colors.green.shade600,
+                      strokeWidth: 3,
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Loading map...',
+                      style: TextStyle(
+                        color: Colors.green.shade600,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    if (!_isConnected) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        'Not connected to server',
+                        style: TextStyle(
+                          color: Colors.red.shade600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               )
-              : null,
+              : Stack(
+                children: [
+                  FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: _userLocationHandler.currentLocation!,
+                      initialZoom: 15.0,
+                      minZoom: 3.0,
+                      maxZoom: 18.0,
+                      interactionOptions: const InteractionOptions(
+                        flags: InteractiveFlag.all,
+                      ),
+                    ),
+                    children: [
+                      // OpenStreetMap Tile Layer
+                      TileLayer(
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.example.app',
+                        maxZoom: 18,
+                      ),
+                      // Polyline Layer for routes
+                      if (_polylines.isNotEmpty)
+                        PolylineLayer(polylines: _polylines),
+                      // Marker Layer
+                      if (_markers.isNotEmpty) MarkerLayer(markers: _markers),
+                    ],
+                  ),
+                  // User count overlay
+                  if (_isConnected && _userLocations.isNotEmpty)
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.people,
+                              size: 16,
+                              color: Colors.green.shade600,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${_userLocations.length + 1}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  // Routes loading indicator
+                  if (isLoadingRoutes)
+                    Positioned(
+                      top: 16,
+                      left: 16,
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.blue.shade600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Loading Routes...',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  // Route info overlay
+                  if (_showRoutes && _polylines.isNotEmpty)
+                    Positioned(
+                      bottom: 100,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.route,
+                                  size: 16,
+                                  color: Colors.blue.shade600,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${_polylines.length} Routes',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              _routeService.routeMode.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          // Show all locations button
+          if (_userLocations.isNotEmpty)
+            FloatingActionButton(
+              heroTag: "show_all_locations",
+              mini: true,
+              shape: const CircleBorder(),
+              onPressed: _showAllLocations,
+              backgroundColor: Colors.purple.shade600,
+              tooltip: 'Show All Locations',
+              child: const Icon(
+                Icons.zoom_out_map,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          const SizedBox(height: 10),
+          // Refresh data button
+          FloatingActionButton(
+            heroTag: "refresh_data",
+            mini: true,
+            shape: const CircleBorder(),
+            onPressed: _refreshData,
+            backgroundColor: Colors.blue.shade600,
+            tooltip: 'Refresh Data',
+            child: const Icon(Icons.refresh, color: Colors.white, size: 20),
+          ),
+          const SizedBox(height: 10),
+          // Refresh current location button
+          FloatingActionButton(
+            heroTag: "refresh_current_location",
+            shape: const CircleBorder(),
+            onPressed: _getCurrentLocation,
+            backgroundColor: Colors.green.shade600,
+            tooltip: 'Refresh My Location',
+            child: const Icon(Icons.my_location, color: Colors.white),
+          ),
+        ],
+      ),
     );
   }
 }
