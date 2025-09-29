@@ -47,3 +47,5 @@ app.*.map.json
 /macos
 /web
 /windows
+/herewego-server/node_modules
+/herewego-server/package-lock.json
