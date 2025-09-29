@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:herewego/widgets/app_snack_bar.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/action_button.dart';
 import '../models/connection_status.dart';
@@ -70,12 +71,13 @@ class _HomepageState extends State<Homepage> {
 
           // Show connection success/failure messages
           if (connectionStatus.isConnected && connectionStatus.roomId != null) {
-            _showSuccessSnackBar(
+            AppSnackBars.showSuccess(
+              context,
               'Connected to room: ${connectionStatus.roomId}',
             );
           } else if (!connectionStatus.isConnected &&
               connectionStatus.message != null) {
-            _showErrorSnackBar(connectionStatus.message!);
+            AppSnackBars.showError(context, connectionStatus.message!);
           }
         }
       },
@@ -85,7 +87,8 @@ class _HomepageState extends State<Homepage> {
             _isConnecting = false;
             _isConnected = false;
           });
-          _showErrorSnackBar('Connection failed: $error');
+
+          AppSnackBars.showError(context, 'Connection failed: $error');
         }
       },
     );
@@ -102,7 +105,7 @@ class _HomepageState extends State<Homepage> {
     // Listen to error messages
     _errorSubscription = _locationService.errorStream.listen((error) {
       if (mounted) {
-        _showErrorSnackBar(error);
+        AppSnackBars.showError(context, error);
       }
     });
   }
@@ -187,7 +190,8 @@ class _HomepageState extends State<Homepage> {
         _isConnecting = false;
         _isConnected = false;
       });
-      _showErrorSnackBar('Connection failed: $e');
+
+      AppSnackBars.showError(context, 'Connection failed: $e');
     }
   }
 
@@ -207,12 +211,13 @@ class _HomepageState extends State<Homepage> {
 
       // Navigate back to connection section after disconnect
       _animateToPage(1);
-      _showSuccessSnackBar('Disconnected successfully');
+      AppSnackBars.showSuccess(context, 'Disconnected successfully');
     } catch (e) {
       setState(() {
         _isConnecting = false;
       });
-      _showErrorSnackBar('Disconnect failed: $e');
+
+      AppSnackBars.showError(context, 'Disconnect failed: $e');
     }
   }
 
@@ -229,40 +234,6 @@ class _HomepageState extends State<Homepage> {
     // Allow letters, numbers, and underscores only
     final regex = RegExp(r'^[a-zA-Z0-9_]+$');
     return regex.hasMatch(userId) && userId.length >= 2 && userId.length <= 20;
-  }
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white, size: 20),
-            SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Colors.green.shade600,
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 3),
-      ),
-    );
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.error, color: Colors.white, size: 20),
-            SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Colors.red.shade600,
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 4),
-      ),
-    );
   }
 
   void _showErrorDialog(String message) {

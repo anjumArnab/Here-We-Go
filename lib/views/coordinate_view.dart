@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:herewego/widgets/app_snack_bar.dart';
 import '../widgets/app_text_field.dart';
 import '../widgets/action_button.dart';
 import '../models/connection_status.dart';
@@ -80,14 +81,14 @@ class _CoordinateViewState extends State<CoordinateView> {
       location,
     ) {
       if (mounted) {
-        _showLocationReceivedNotification(location);
+        AppSnackBars.showLocationUpdate(context, location.userId);
       }
     });
 
     // Listen to error messages
     _errorSubscription = _locationService.errorStream.listen((error) {
       if (mounted) {
-        _showErrorSnackBar(error);
+        AppSnackBars.showError(context, error);
       }
     });
   }
@@ -100,48 +101,6 @@ class _CoordinateViewState extends State<CoordinateView> {
       _currentUserId = _locationService.currentUserId;
       _roomUsers = _locationService.roomUsers;
     });
-  }
-
-  void _showLocationReceivedNotification(UserLocation location) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.location_on, color: Colors.white, size: 20),
-            SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'New location from ${location.userId}',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    'Lat: ${location.latitude.toStringAsFixed(6)}, Lng: ${location.longitude.toStringAsFixed(6)}',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.blue.shade600,
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 3),
-        action: SnackBarAction(
-          label: 'View Map',
-          textColor: Colors.white,
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const MapView()),
-            );
-          },
-        ),
-      ),
-    );
   }
 
   Future<void> _getCurrentLocation() async {
@@ -182,9 +141,12 @@ class _CoordinateViewState extends State<CoordinateView> {
             isGettingLocation = false;
             locationStatus = "Location permission denied";
           });
-          _showLocationError(
+
+          AppSnackBars.showError(
+            context,
             "Location permissions are denied. Please grant location permission in your device settings.",
           );
+
           return;
         }
       }
@@ -224,7 +186,16 @@ class _CoordinateViewState extends State<CoordinateView> {
       });
 
       // Show success message
-      _showSuccessMessage();
+      AppSnackBars.showLocationReceived(
+        context,
+        'Your Location',
+        latitude!,
+        longitude!,
+        () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MapView()),
+        ),
+      );
     } catch (e) {
       setState(() {
         isGettingLocation = false;
@@ -237,7 +208,10 @@ class _CoordinateViewState extends State<CoordinateView> {
       } else if (errorMessage.contains('timeout')) {
         _showLocationTimeoutDialog();
       } else {
-        _showLocationError("Error getting current location: $errorMessage");
+        AppSnackBars.showError(
+          context,
+          "Error getting current location: $errorMessage",
+        );
       }
     }
   }
@@ -341,42 +315,12 @@ class _CoordinateViewState extends State<CoordinateView> {
     );
   }
 
-  void _showSuccessMessage() {
-    if (latitude != null && longitude != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.white, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    'Location obtained successfully!',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Lat: ${latitude!.toStringAsFixed(6)}, Lng: ${longitude!.toStringAsFixed(6)}',
-                style: TextStyle(fontSize: 12),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.green.shade600,
-          behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
-  }
-
   Future<void> _sendLocationToServer() async {
     if (!_isConnected) {
-      _showErrorSnackBar('Not connected to server. Please connect first.');
+      AppSnackBars.showError(
+        context,
+        'Not connected to server. Please connect first.',
+      );
       return;
     }
 
@@ -402,76 +346,32 @@ class _CoordinateViewState extends State<CoordinateView> {
           _totalLocationsSent++;
           _lastLocationSent = DateTime.now();
         });
-        _showLocationSentSuccess();
+        AppSnackBars.showLocationReceived(
+          context,
+          'Shared with ${_roomUsers.length - 1} other users',
+          'Lat: ${latitude!.toStringAsFixed(6)}' as double,
+          'Lng: ${longitude!.toStringAsFixed(6)}' as double,
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const MapView()),
+          ),
+        );
       } else {
-        _showErrorSnackBar('Failed to send location. Please try again.');
+        AppSnackBars.showError(
+          context,
+          'Failed to send location. Please try again.',
+        );
       }
     } catch (e) {
       setState(() {
         isSendingLocation = false;
       });
-      _showErrorSnackBar('Error sending location: $e');
+      AppSnackBars.showError(context, 'Error sending location: $e');
     }
-  }
-
-  void _showLocationSentSuccess() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white, size: 20),
-                SizedBox(width: 8),
-                Text(
-                  'Location sent successfully!',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            SizedBox(height: 4),
-            Text(
-              'Lat: ${latitude!.toStringAsFixed(6)}, Lng: ${longitude!.toStringAsFixed(6)}',
-              style: TextStyle(fontSize: 12),
-            ),
-            Text(
-              'Shared with ${_roomUsers.length - 1} other users',
-              style: TextStyle(fontSize: 12),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.green.shade600,
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 4),
-      ),
-    );
   }
 
   void _sendManualLocation() {
     _sendLocationToServer();
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.error, color: Colors.white, size: 20),
-            SizedBox(width: 8),
-            Expanded(child: Text(message)),
-          ],
-        ),
-        backgroundColor: Colors.red.shade600,
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 4),
-      ),
-    );
-  }
-
-  void _showLocationError(String message) {
-    _showErrorSnackBar(message);
   }
 
   void _showLocationStats() {
@@ -599,7 +499,7 @@ class _CoordinateViewState extends State<CoordinateView> {
       padding: EdgeInsets.all(12),
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.green.shade50,
+        color: Colors.blue.shade50,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.blue),
       ),
@@ -765,7 +665,7 @@ class _CoordinateViewState extends State<CoordinateView> {
                                       locationStatus!.contains('denied') ||
                                       locationStatus!.contains('disabled')
                                   ? Colors.red.shade300
-                                  : Colors.green.shade300,
+                                  : Colors.blue.shade300,
                         ),
                       ),
                       child: Text(
@@ -777,7 +677,7 @@ class _CoordinateViewState extends State<CoordinateView> {
                                       locationStatus!.contains('denied') ||
                                       locationStatus!.contains('disabled')
                                   ? Colors.red.shade600
-                                  : Colors.green.shade600,
+                                  : Colors.blue.shade600,
                         ),
                         textAlign: TextAlign.center,
                       ),
