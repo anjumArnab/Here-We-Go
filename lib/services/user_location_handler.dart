@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -121,7 +123,7 @@ class UserLocationHandler {
         ),
       ),
       child: Icon(
-        hasPermission ? Icons.my_location : Icons.location_on,
+        hasPermission ? Icons.location_pin : Icons.location_on,
         color: hasPermission ? Colors.blue : Colors.grey,
         size: 28,
       ),
