@@ -5,18 +5,11 @@ class AppSnackBars {
   static void showSnackBar(
     BuildContext context, {
     required Widget content,
-    Color? backgroundColor,
     Duration duration = const Duration(seconds: 3),
     SnackBarAction? action,
   }) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: content,
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        duration: duration,
-        action: action,
-      ),
+      SnackBar(content: content, duration: duration, action: action),
     );
   }
 
@@ -31,7 +24,6 @@ class AppSnackBars {
           Expanded(child: Text(message)),
         ],
       ),
-      backgroundColor: Colors.green.shade600,
     );
   }
 
@@ -46,7 +38,6 @@ class AppSnackBars {
           Expanded(child: Text(message)),
         ],
       ),
-      backgroundColor: Colors.red.shade600,
       duration: const Duration(seconds: 4),
     );
   }
@@ -83,7 +74,6 @@ class AppSnackBars {
           ),
         ],
       ),
-      backgroundColor: Colors.blue.shade600,
       action: SnackBarAction(
         label: 'View Map',
         textColor: Colors.white,
@@ -126,7 +116,6 @@ class AppSnackBars {
           ),
         ],
       ),
-      backgroundColor: Colors.green.shade600,
       duration: const Duration(seconds: 4),
     );
   }
@@ -147,7 +136,6 @@ class AppSnackBars {
           ),
         ],
       ),
-      backgroundColor: Colors.blue.shade600,
       duration: const Duration(seconds: 2),
     );
   }
