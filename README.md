@@ -9,10 +9,6 @@ It also provides seamless **route visualization** between shared locations by in
 - Route visualization with **OSRM API** ([Routing API](http://router.project-osrm.org/route/v1/driving/))  
 - Powered by **Node.js** backend with **Socket.IO** for real-time communication  
 
-## Previews
+## Preview
 
-![Homepage](assets/t01.png)
-![Homepage](assets/t02.png)
-![Homepage](assets/t03.png)
-![CoordinateView](assets/t04.png)
-![MapView](assets/t05.png)
+![HereWeGo](assets/herewego.gif)
