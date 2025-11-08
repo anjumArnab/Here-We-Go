@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:herewego/views/homepage.dart';
+import '../views/homepage.dart';
 
 void main() {
   runApp(HereWeGo());
@@ -15,7 +15,6 @@ class HereWeGo extends StatelessWidget {
       title: 'HereWeGo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
         textTheme: GoogleFonts.poppinsTextTheme(),
       ),
       home: Homepage(),
