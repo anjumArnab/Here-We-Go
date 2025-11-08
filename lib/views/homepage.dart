@@ -752,54 +752,6 @@ class _HomepageState extends State<Homepage> {
                         ),
                       ),
                     ),
-
-                  // Route info overlay
-                  if (_showRoutes && _polylines.isNotEmpty)
-                    Positioned(
-                      bottom: 100,
-                      right: AppTheme.spacingMedium,
-                      child: Container(
-                        padding: EdgeInsets.all(AppTheme.spacingSmall),
-                        decoration: BoxDecoration(
-                          color: AppTheme.cardWhite,
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.radiusMedium,
-                          ),
-                          boxShadow: [AppTheme.lightShadow],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.route,
-                                  size: 16,
-                                  color: AppTheme.primaryNavy,
-                                ),
-                                SizedBox(width: AppTheme.spacingXSmall),
-                                Text(
-                                  '${_polylines.length} Routes',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.primaryNavy,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              _routeService.routeMode.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: AppTheme.textGray,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                 ],
               ),
 
