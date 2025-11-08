@@ -5,7 +5,6 @@ class AppTextField extends StatelessWidget {
   final String label;
   final String hint;
   final IconData icon;
-  final String? helperText;
   final bool enabled;
   final TextInputType keyboardType;
   final int? maxLength;
@@ -20,7 +19,6 @@ class AppTextField extends StatelessWidget {
     required this.label,
     required this.hint,
     required this.icon,
-    this.helperText,
     this.enabled = true,
     this.keyboardType = TextInputType.text,
     this.maxLength,
@@ -56,11 +54,14 @@ class AppTextField extends StatelessWidget {
               }
               : null),
       decoration: InputDecoration(
-        labelText: label,
         hintText: hint,
+        filled: true,
+        fillColor: Colors.grey[300],
         prefixIcon: Icon(icon),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        helperText: helperText,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide.none,
+        ),
       ),
     );
   }
