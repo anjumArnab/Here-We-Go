@@ -237,4 +237,4 @@ process.on('SIGINT', () => {
 runSimulation();
 ```
 
-**Note:** Ensure the SERVER_URL matches the URL provided by ngrok http 3000, and use the same ROOM_ID in both the server and the app to establish a successful connection.
+**Note:** Ensure the `SERVER_URL` matches the URL provided by `ngrok http 3000`, and use the same `ROOM_ID` in both the server and the app to establish a successful connection.
