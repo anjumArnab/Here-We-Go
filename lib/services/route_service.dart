@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import '../models/route_info.dart';
 import '../models/user_location.dart';
+import '../models/route_data.dart';
 
 class RouteService {
   // OSRM API base URL
@@ -59,7 +60,7 @@ class RouteService {
   }
 
   bool isApiConfigured() {
-    return true; // OSRM is public and doesn't require API key
+    return true;
   }
 
   /// Get route points between two locations using OSRM API
@@ -259,23 +260,4 @@ class RouteService {
     _selectedUsers.clear();
     _routeCache.clear();
   }
-}
-
-/// Data class for route information
-class RouteData {
-  final String userId;
-  final UserLocation userLocation;
-  final List<LatLng> points;
-  final Color color;
-  final double strokeWidth;
-  final bool isDotted;
-
-  RouteData({
-    required this.userId,
-    required this.userLocation,
-    required this.points,
-    required this.color,
-    this.strokeWidth = 4.0,
-    this.isDotted = false,
-  });
 }
