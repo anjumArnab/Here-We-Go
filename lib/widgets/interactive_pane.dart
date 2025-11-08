@@ -64,7 +64,7 @@ class _InteractivePaneState extends State<InteractivePane> {
       left: 10,
       child: Container(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.35,
+          maxHeight: MediaQuery.of(context).size.height * 0.50,
           maxWidth: MediaQuery.of(context).size.width * 0.95,
         ),
         decoration: BoxDecoration(
