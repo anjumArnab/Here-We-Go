@@ -79,8 +79,9 @@ class _InteractivePaneState extends State<InteractivePane> {
             if (widget.isExpanded)
               Flexible(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
+                    Flexible(
                       child: PageView(
                         controller: _pageController,
                         onPageChanged: (index) {
@@ -112,7 +113,7 @@ class _InteractivePaneState extends State<InteractivePane> {
         backgroundColor: AppTheme.primaryNavy,
         child: IconButton(
           icon: Icon(
-            widget.isExpanded ?  Icons.expand_more : Icons.expand_less,
+            widget.isExpanded ? Icons.expand_more : Icons.expand_less,
             color: AppTheme.cardWhite,
             size: 20,
           ),
@@ -126,7 +127,10 @@ class _InteractivePaneState extends State<InteractivePane> {
 
   Widget _buildPageIndicator() {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: AppTheme.spacingSmall),
+      padding: EdgeInsets.only(
+        bottom: AppTheme.spacingSmall,
+        top: AppTheme.spacingSmall - 2,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(3, (index) {
@@ -151,7 +155,10 @@ class _InteractivePaneState extends State<InteractivePane> {
     final isConnected = widget.locationService.isConnected;
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(AppTheme.spacingMedium),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppTheme.spacingMedium,
+        vertical: AppTheme.spacingSmall,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -167,7 +174,7 @@ class _InteractivePaneState extends State<InteractivePane> {
               Text(
                 'Connect with your friends',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.textDark,
                 ),
@@ -183,7 +190,6 @@ class _InteractivePaneState extends State<InteractivePane> {
               icon: Icons.cloud,
             ),
             SizedBox(height: AppTheme.spacingSmall),
-
             Row(
               children: [
                 Expanded(
@@ -206,7 +212,6 @@ class _InteractivePaneState extends State<InteractivePane> {
               ],
             ),
             SizedBox(height: AppTheme.spacingSmall + 2),
-
             AppActionButton(
               label: 'Connect',
               icon: Icons.link,
@@ -216,8 +221,7 @@ class _InteractivePaneState extends State<InteractivePane> {
             ),
           ] else ...[
             _buildConnectionInfo(),
-            SizedBox(height: AppTheme.spacingSmall),
-
+            SizedBox(height: AppTheme.spacingSmall + 2),
             AppActionButton(
               label: 'Disconnect',
               icon: Icons.link_off,
@@ -245,39 +249,25 @@ class _InteractivePaneState extends State<InteractivePane> {
 
         return Container(
           padding: EdgeInsets.all(AppTheme.spacingSmall),
+          width: double.infinity,
           decoration: BoxDecoration(
             color: AppTheme.gray100,
             borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
             border: Border.all(color: AppTheme.gray200),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    color: AppTheme.successGreen,
-                    size: 14,
-                  ),
-                  SizedBox(width: AppTheme.spacingSmall - 2),
-                  Expanded(
-                    child: Text(
-                      status != null
-                          ? '${status.message ?? "Connected"} • Room: ${status.roomId ?? "N/A"} • User: ${status.userId ?? "N/A"} • Users: ${status.roomUsers.length}'
-                          : 'Connected',
-                      style: TextStyle(
-                        color: AppTheme.successGreen,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 11,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          child: Text(
+            status != null
+                ? 'Connected with room ${status.roomId ?? "N/A"}\n'
+                    'You: ${status.userId ?? "N/A"}\n'
+                    'Friends: ${status.roomUsers.length} (${status.message ?? "Connected"})'
+                : 'Connected',
+            style: TextStyle(
+              fontSize: 12,
+              color: AppTheme.successGreen,
+              fontWeight: FontWeight.w500,
+            ),
+            softWrap: true,
+            overflow: TextOverflow.ellipsis,
           ),
         );
       },
@@ -289,7 +279,10 @@ class _InteractivePaneState extends State<InteractivePane> {
     final hasLocation = widget.currentLocation != null;
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(AppTheme.spacingMedium),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppTheme.spacingMedium,
+        vertical: AppTheme.spacingSmall,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -305,15 +298,15 @@ class _InteractivePaneState extends State<InteractivePane> {
               Text(
                 'Send them your location',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.textDark,
                 ),
               ),
             ],
           ),
-          SizedBox(height: AppTheme.spacingSmall + 2),
-          if (hasLocation)
+          if (hasLocation) ...[
+            SizedBox(height: AppTheme.spacingSmall + 2),
             Container(
               padding: EdgeInsets.all(AppTheme.spacingSmall),
               decoration: BoxDecoration(
@@ -325,15 +318,19 @@ class _InteractivePaneState extends State<InteractivePane> {
                 children: [
                   Expanded(
                     child: Text(
-                      'You are currently on Lat: ${widget.currentLocation!.latitude.toStringAsFixed(5)} • Lng: ${widget.currentLocation!.longitude.toStringAsFixed(5)}',
-                      style: TextStyle(fontSize: 10, color: AppTheme.infoBlue),
-                      maxLines: 1,
+                      'You are currently on\nLat: ${widget.currentLocation!.latitude.toStringAsFixed(5)} • Lng: ${widget.currentLocation!.longitude.toStringAsFixed(5)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.infoBlue,
+                      ),
+                      softWrap: true,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
             ),
+          ],
           SizedBox(height: AppTheme.spacingSmall + 2),
           AppActionButton(
             label: isConnected ? 'Send Location' : 'Connect First',
@@ -361,7 +358,10 @@ class _InteractivePaneState extends State<InteractivePane> {
             userLocations.entries.where((e) => e.key != currentUserId).toList();
 
         return SingleChildScrollView(
-          padding: EdgeInsets.all(AppTheme.spacingMedium),
+          padding: EdgeInsets.symmetric(
+            horizontal: AppTheme.spacingMedium,
+            vertical: AppTheme.spacingSmall,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -373,45 +373,20 @@ class _InteractivePaneState extends State<InteractivePane> {
                   Text(
                     'See where your friends are',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textDark,
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppTheme.spacingSmall - 2,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.gray100,
-                      borderRadius: BorderRadius.circular(
-                        AppTheme.radiusMedium,
-                      ),
-                    ),
-                    child: Text(
-                      '${otherUsers.length}',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: AppTheme.primaryNavy,
-                        fontWeight: FontWeight.w600,
-                      ),
                     ),
                   ),
                 ],
               ),
               SizedBox(height: AppTheme.spacingSmall + 2),
               _buildRouteModeSelector(),
-              SizedBox(height: AppTheme.spacingSmall),
-
-              // Show Routes To section
               if (otherUsers.isNotEmpty) ...[
-                _buildShowRoutesToSection(otherUsers),
-                SizedBox(height: AppTheme.spacingSmall),
-              ],
-
-              if (otherUsers.isEmpty)
+                SizedBox(height: AppTheme.spacingSmall + 2),
+                _buildMergedShowRoutesToSection(otherUsers),
+              ] else ...[
+                SizedBox(height: AppTheme.spacingSmall + 2),
                 Container(
                   padding: EdgeInsets.all(AppTheme.spacingSmall + 2),
                   decoration: BoxDecoration(
@@ -430,23 +405,15 @@ class _InteractivePaneState extends State<InteractivePane> {
                         child: Text(
                           'Your friends are not sharing their location yet',
                           style: TextStyle(
+                            fontSize: 12,
                             color: AppTheme.gray700,
-                            fontSize: 11,
                           ),
                         ),
                       ),
                     ],
                   ),
-                )
-              else
-                Column(
-                  children:
-                      otherUsers
-                          .map(
-                            (entry) => _buildRouteItem(entry.key, entry.value),
-                          )
-                          .toList(),
                 ),
+              ],
             ],
           ),
         );
@@ -454,167 +421,221 @@ class _InteractivePaneState extends State<InteractivePane> {
     );
   }
 
-  // Show Routes To section with All Users toggle and individual checkboxes
-  Widget _buildShowRoutesToSection(
+  Widget _buildMergedShowRoutesToSection(
     List<MapEntry<String, UserLocation>> otherUsers,
   ) {
-    final currentUserId = widget.locationService.currentUserId;
     final isAllSelected = widget.routeService.selectedUsers.isEmpty;
 
-    return Container(
-      padding: EdgeInsets.all(AppTheme.spacingSmall),
-      decoration: BoxDecoration(
-        color: AppTheme.gray300,
-        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-        border: Border.all(color: AppTheme.gray200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Section header
-          Text(
-            'Show Routes To:',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textDark,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Show Routes To:',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textDark,
           ),
-          SizedBox(height: AppTheme.spacingSmall - 2),
+        ),
+        SizedBox(height: AppTheme.spacingSmall),
+        Wrap(
+          spacing: AppTheme.spacingSmall,
+          runSpacing: AppTheme.spacingSmall,
+          children: [
+            _buildAllUsersChip(isAllSelected, otherUsers),
+            ...otherUsers.map(
+              (entry) =>
+                  _buildUserRouteChip(entry.key, entry.value, isAllSelected),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 
-          // All Users checkbox
-          InkWell(
-            onTap: () {
-              if (isAllSelected) {
-                // If all is selected, select all users individually
-                widget.routeService.setSelectedUsers(
-                  otherUsers.map((e) => e.key).toList(),
-                );
-              } else {
-                // Clear selection (which means show all)
-                widget.routeService.clearSelectedUsers();
-              }
-              widget.onRouteFilterChanged();
-            },
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppTheme.spacingSmall - 2,
-                vertical: 4,
-              ),
-              decoration: BoxDecoration(
+  Widget _buildAllUsersChip(
+    bool isAllSelected,
+    List<MapEntry<String, UserLocation>> otherUsers,
+  ) {
+    return InkWell(
+      onTap: () {
+        if (isAllSelected) {
+          widget.routeService.setSelectedUsers(
+            otherUsers.map((e) => e.key).toList(),
+          );
+        } else {
+          widget.routeService.clearSelectedUsers();
+        }
+        widget.onRouteFilterChanged();
+      },
+      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppTheme.spacingMedium,
+          vertical: AppTheme.spacingSmall + 2,
+        ),
+        decoration: BoxDecoration(
+          color:
+              isAllSelected
+                  ? AppTheme.primaryGreen.withOpacity(0.15)
+                  : AppTheme.cardWhite,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          border: Border.all(
+            color: isAllSelected ? AppTheme.primaryGreen : AppTheme.gray300,
+            width: isAllSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isAllSelected ? Icons.check_box : Icons.check_box_outline_blank,
+              size: 20,
+              color: isAllSelected ? AppTheme.primaryGreen : AppTheme.gray600,
+            ),
+            SizedBox(width: AppTheme.spacingSmall),
+            Text(
+              'Everyone',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isAllSelected ? FontWeight.w600 : FontWeight.w500,
                 color:
-                    isAllSelected
-                        ? AppTheme.primaryGreen.withOpacity(0.1)
-                        : Colors.transparent,
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    isAllSelected ? AppTheme.primaryGreen : AppTheme.textDark,
               ),
-              child: Row(
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserRouteChip(
+    String userId,
+    UserLocation location,
+    bool isAllSelected,
+  ) {
+    final isUserSelected =
+        isAllSelected || widget.routeService.selectedUsers.contains(userId);
+    final isEnabled = !isAllSelected;
+
+    final routeInfo =
+        widget.currentLocation != null
+            ? widget.routeService.getRouteInfo(
+              userId: userId,
+              userLocation: location,
+              currentLocation: widget.currentLocation!,
+            )
+            : null;
+
+    return InkWell(
+      onTap:
+          isEnabled
+              ? () {
+                if (isUserSelected) {
+                  widget.routeService.removeSelectedUser(userId);
+                } else {
+                  widget.routeService.addSelectedUser(userId);
+                }
+                widget.onRouteFilterChanged();
+              }
+              : null,
+      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppTheme.spacingMedium,
+          vertical: AppTheme.spacingSmall + 2,
+        ),
+        decoration: BoxDecoration(
+          color:
+              isUserSelected && isEnabled
+                  ? AppTheme.infoBlue.withOpacity(0.15)
+                  : AppTheme.cardWhite,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+          border: Border.all(
+            color:
+                isUserSelected && isEnabled
+                    ? AppTheme.infoBlue
+                    : AppTheme.gray300,
+            width: isUserSelected && isEnabled ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isUserSelected ? Icons.check_box : Icons.check_box_outline_blank,
+              size: 20,
+              color:
+                  isEnabled
+                      ? (isUserSelected ? AppTheme.infoBlue : AppTheme.gray600)
+                      : AppTheme.gray400,
+            ),
+            SizedBox(width: AppTheme.spacingSmall),
+            Text(
+              userId,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight:
+                    isUserSelected && isEnabled
+                        ? FontWeight.w600
+                        : FontWeight.w500,
+                color:
+                    isEnabled
+                        ? (isUserSelected
+                            ? AppTheme.infoBlue
+                            : AppTheme.textDark)
+                        : AppTheme.gray400,
+              ),
+            ),
+            if (routeInfo != null) ...[
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 6),
+                child: Text(
+                  '•',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isEnabled ? AppTheme.gray600 : AppTheme.gray400,
+                  ),
+                ),
+              ),
+              Text(
+                routeInfo.lastUpdated,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isEnabled ? AppTheme.textGray : AppTheme.gray400,
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 6),
+                child: Text(
+                  '•',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isEnabled ? AppTheme.gray600 : AppTheme.gray400,
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    isAllSelected
-                        ? Icons.check_box
-                        : Icons.check_box_outline_blank,
-                    size: 16,
-                    color:
-                        isAllSelected
-                            ? AppTheme.primaryGreen
-                            : AppTheme.gray600,
+                    Icons.straighten,
+                    size: 12,
+                    color: isEnabled ? AppTheme.gray600 : AppTheme.gray400,
                   ),
-                  SizedBox(width: AppTheme.spacingSmall - 2),
+                  SizedBox(width: 3),
                   Text(
-                    'All Users',
+                    routeInfo.directDistance,
                     style: TextStyle(
                       fontSize: 11,
-                      fontWeight:
-                          isAllSelected ? FontWeight.w600 : FontWeight.normal,
-                      color:
-                          isAllSelected
-                              ? AppTheme.primaryGreen
-                              : AppTheme.textDark,
+                      color: isEnabled ? AppTheme.gray700 : AppTheme.gray400,
                     ),
                   ),
                 ],
               ),
-            ),
-          ),
-
-          SizedBox(height: 4),
-          Divider(height: 1, color: AppTheme.gray200),
-          SizedBox(height: 4),
-
-          // Individual user checkboxes
-          ...otherUsers.map((entry) {
-            final userId = entry.key;
-            final isUserSelected =
-                isAllSelected ||
-                widget.routeService.selectedUsers.contains(userId);
-            final isEnabled = !isAllSelected;
-
-            return InkWell(
-              onTap:
-                  isEnabled
-                      ? () {
-                        if (isUserSelected) {
-                          widget.routeService.removeSelectedUser(userId);
-                        } else {
-                          widget.routeService.addSelectedUser(userId);
-                        }
-                        widget.onRouteFilterChanged();
-                      }
-                      : null,
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacingSmall - 2,
-                  vertical: 4,
-                ),
-                margin: EdgeInsets.only(bottom: 2),
-                decoration: BoxDecoration(
-                  color:
-                      isUserSelected && isEnabled
-                          ? AppTheme.infoBlue.withOpacity(0.1)
-                          : Colors.transparent,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      isUserSelected
-                          ? Icons.check_box
-                          : Icons.check_box_outline_blank,
-                      size: 16,
-                      color:
-                          isEnabled
-                              ? (isUserSelected
-                                  ? AppTheme.infoBlue
-                                  : AppTheme.gray600)
-                              : AppTheme.gray400,
-                    ),
-                    SizedBox(width: AppTheme.spacingSmall - 2),
-                    Expanded(
-                      child: Text(
-                        userId,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight:
-                              isUserSelected && isEnabled
-                                  ? FontWeight.w600
-                                  : FontWeight.normal,
-                          color:
-                              isEnabled
-                                  ? (isUserSelected
-                                      ? AppTheme.infoBlue
-                                      : AppTheme.textDark)
-                                  : AppTheme.gray300,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ],
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -652,108 +673,16 @@ class _InteractivePaneState extends State<InteractivePane> {
                     width: isSelected ? 2 : 1,
                   ),
                 ),
-                child: Column(
-                  children: [
-                    Icon(
-                      icons[index],
-                      color: isSelected ? AppTheme.cardWhite : AppTheme.gray600,
-                      size: 16,
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      mode[0].toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 9,
-                        color:
-                            isSelected ? AppTheme.cardWhite : AppTheme.gray600,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.normal,
-                      ),
-                    ),
-                  ],
+                child: Icon(
+                  icons[index],
+                  color: isSelected ? AppTheme.cardWhite : AppTheme.gray600,
+                  size: 16,
                 ),
               ),
             ),
           ),
         );
       }),
-    );
-  }
-
-  Widget _buildRouteItem(String userId, UserLocation location) {
-    final routeInfo =
-        widget.currentLocation != null
-            ? widget.routeService.getRouteInfo(
-              userId: userId,
-              userLocation: location,
-              currentLocation: widget.currentLocation!,
-            )
-            : null;
-
-    return Container(
-      margin: EdgeInsets.only(bottom: AppTheme.spacingSmall - 2),
-      padding: EdgeInsets.all(AppTheme.spacingSmall),
-      decoration: BoxDecoration(
-        color: AppTheme.cardWhite,
-        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-        border: Border.all(color: AppTheme.gray200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 12,
-                backgroundColor: AppTheme.gray100,
-                child: Text(
-                  userId.substring(0, 1).toUpperCase(),
-                  style: TextStyle(
-                    color: AppTheme.infoBlue,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 10,
-                  ),
-                ),
-              ),
-              SizedBox(width: AppTheme.spacingSmall),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      userId,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 11,
-                        color: AppTheme.textDark,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (routeInfo != null)
-                      Text(
-                        routeInfo.lastUpdated,
-                        style: TextStyle(fontSize: 9, color: AppTheme.textGray),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (routeInfo != null) ...[
-            SizedBox(height: AppTheme.spacingSmall - 2),
-            Row(
-              children: [
-                Icon(Icons.straighten, size: 11, color: AppTheme.gray600),
-                SizedBox(width: 3),
-                Text(
-                  routeInfo.directDistance,
-                  style: TextStyle(fontSize: 10, color: AppTheme.gray700),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
     );
   }
 }
