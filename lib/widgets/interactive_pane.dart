@@ -2,23 +2,20 @@
 
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 import 'app_action_button.dart';
 import '../app_theme.dart';
 import '../widgets/app_text_field.dart';
-import '../services/location_service.dart';
-import '../services/route_service.dart';
+import '../providers/location_provider.dart';
+import '../providers/route_provider.dart';
 import '../models/user_location.dart';
-import '../models/connection_status.dart';
 
 class InteractivePane extends StatelessWidget {
-  final LocationService locationService;
-  final RouteService routeService;
   final LatLng? currentLocation;
   final VoidCallback? onSendLocation;
   final TextEditingController serverUrlController;
   final TextEditingController roomIdController;
   final TextEditingController userIdController;
-  final bool isConnecting;
   final VoidCallback onConnect;
   final VoidCallback onDisconnect;
   final bool isExpanded;
@@ -31,14 +28,11 @@ class InteractivePane extends StatelessWidget {
 
   const InteractivePane({
     super.key,
-    required this.locationService,
-    required this.routeService,
     required this.currentLocation,
     required this.onSendLocation,
     required this.serverUrlController,
     required this.roomIdController,
     required this.userIdController,
-    required this.isConnecting,
     required this.onConnect,
     required this.onDisconnect,
     required this.isExpanded,
@@ -79,9 +73,9 @@ class InteractivePane extends StatelessWidget {
                         controller: pageController,
                         onPageChanged: onPageChanged,
                         children: [
-                          _buildServerConnectionSection(),
-                          _buildLocationSenderSection(),
-                          _buildRoutesSection(),
+                          _buildServerConnectionSection(context),
+                          _buildLocationSenderSection(context),
+                          _buildRoutesSection(context),
                         ],
                       ),
                     ),
@@ -140,208 +134,198 @@ class InteractivePane extends StatelessWidget {
     );
   }
 
-  Widget _buildServerConnectionSection() {
-    final isConnected = locationService.isConnected;
+  Widget _buildServerConnectionSection(BuildContext context) {
+    return Consumer<LocationProvider>(
+      builder: (context, locationProvider, _) {
+        final isConnected = locationProvider.isConnected;
+        final isConnecting = locationProvider.isConnecting;
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacingMedium,
-        vertical: AppTheme.spacingSmall,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Icon(
-                isConnected ? Icons.cloud_done : Icons.cloud_off,
-                color: isConnected ? AppTheme.successGreen : AppTheme.gray600,
-                size: 16,
-              ),
-              SizedBox(width: AppTheme.spacingSmall - 2),
-              Text(
-                'Connect with your friends',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textDark,
-                ),
-              ),
-            ],
+        return SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppTheme.spacingMedium,
+            vertical: AppTheme.spacingSmall,
           ),
-          SizedBox(height: AppTheme.spacingSmall + 2),
-          if (!isConnected) ...[
-            AppTextField(
-              controller: serverUrlController,
-              label: '',
-              hint: 'https://abc123.ngrok.io',
-              icon: Icons.cloud,
-            ),
-            SizedBox(height: AppTheme.spacingSmall),
-            Row(
-              children: [
-                Expanded(
-                  child: AppTextField(
-                    controller: roomIdController,
-                    label: '',
-                    hint: 'Room ID',
-                    icon: Icons.meeting_room,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    isConnected ? Icons.cloud_done : Icons.cloud_off,
+                    color:
+                        isConnected ? AppTheme.successGreen : AppTheme.gray600,
+                    size: 16,
                   ),
+                  SizedBox(width: AppTheme.spacingSmall - 2),
+                  Text(
+                    'Connect with your friends',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textDark,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppTheme.spacingSmall + 2),
+              if (!isConnected) ...[
+                AppTextField(
+                  controller: serverUrlController,
+                  hint: 'https://abc123.ngrok.io',
+                  icon: Icons.cloud,
                 ),
-                SizedBox(width: AppTheme.spacingSmall),
-                Expanded(
-                  child: AppTextField(
-                    controller: userIdController,
-                    label: '',
-                    hint: 'User ID',
-                    icon: Icons.person,
-                  ),
+                SizedBox(height: AppTheme.spacingSmall),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppTextField(
+                        controller: roomIdController,
+                        hint: 'Room ID',
+                        icon: Icons.meeting_room,
+                      ),
+                    ),
+                    SizedBox(width: AppTheme.spacingSmall),
+                    Expanded(
+                      child: AppTextField(
+                        controller: userIdController,
+                        hint: 'User ID',
+                        icon: Icons.person,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: AppTheme.spacingSmall + 2),
+                AppActionButton(
+                  label: isConnecting ? 'Connecting...' : 'Connect',
+                  icon: Icons.link,
+                  backgroundColor: AppTheme.infoBlue,
+                  foregroundColor: AppTheme.cardWhite,
+                  onPressed: isConnecting ? null : onConnect,
+                ),
+              ] else ...[
+                _buildConnectionInfo(locationProvider),
+                SizedBox(height: AppTheme.spacingSmall + 2),
+                AppActionButton(
+                  label: 'Disconnect',
+                  icon: Icons.link_off,
+                  backgroundColor: AppTheme.errorRed,
+                  foregroundColor: AppTheme.cardWhite,
+                  onPressed: onDisconnect,
                 ),
               ],
-            ),
-            SizedBox(height: AppTheme.spacingSmall + 2),
-            AppActionButton(
-              label: 'Connect',
-              icon: Icons.link,
-              backgroundColor: AppTheme.infoBlue,
-              foregroundColor: AppTheme.cardWhite,
-              onPressed: isConnecting ? null : onConnect,
-            ),
-          ] else ...[
-            _buildConnectionInfo(),
-            SizedBox(height: AppTheme.spacingSmall + 2),
-            AppActionButton(
-              label: 'Disconnect',
-              icon: Icons.link_off,
-              backgroundColor: AppTheme.errorRed,
-              foregroundColor: AppTheme.cardWhite,
-              onPressed: onDisconnect,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildConnectionInfo() {
-    return StreamBuilder<ConnectionStatus>(
-      stream: locationService.connectionStream,
-      initialData: ConnectionStatus(
-        isConnected: locationService.isConnected,
-        roomId: locationService.currentRoomId,
-        userId: locationService.currentUserId,
-        roomUsers: locationService.roomUsers,
-      ),
-      builder: (context, snapshot) {
-        final status = snapshot.data;
-
-        return Container(
-          padding: EdgeInsets.all(AppTheme.spacingSmall),
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: AppTheme.gray100,
-            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-            border: Border.all(color: AppTheme.gray200),
-          ),
-          child: Text(
-            status != null
-                ? 'Connected with room ${status.roomId ?? "N/A"}\n'
-                    'You: ${status.userId ?? "N/A"}\n'
-                    'Friends: ${status.roomUsers.length} (${status.message ?? "Connected"})'
-                : 'Connected',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppTheme.successGreen,
-              fontWeight: FontWeight.w500,
-            ),
-            softWrap: true,
-            overflow: TextOverflow.ellipsis,
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildLocationSenderSection() {
-    final isConnected = locationService.isConnected;
-    final hasLocation = currentLocation != null;
-
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacingMedium,
-        vertical: AppTheme.spacingSmall,
+  Widget _buildConnectionInfo(LocationProvider locationProvider) {
+    return Container(
+      padding: EdgeInsets.all(AppTheme.spacingSmall),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppTheme.gray100,
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+        border: Border.all(color: AppTheme.gray200),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.my_location,
-                color: hasLocation ? AppTheme.successGreen : AppTheme.gray600,
-                size: 16,
-              ),
-              SizedBox(width: AppTheme.spacingSmall - 2),
-              Text(
-                'Send them your location',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textDark,
-                ),
-              ),
-            ],
-          ),
-          if (hasLocation) ...[
-            SizedBox(height: AppTheme.spacingSmall + 2),
-            Container(
-              padding: EdgeInsets.all(AppTheme.spacingSmall),
-              decoration: BoxDecoration(
-                color: AppTheme.gray100,
-                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                border: Border.all(color: AppTheme.gray200),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'You are currently on\nLat: ${currentLocation!.latitude.toStringAsFixed(5)} • Lng: ${currentLocation!.longitude.toStringAsFixed(5)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.infoBlue,
-                      ),
-                      softWrap: true,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          SizedBox(height: AppTheme.spacingSmall + 2),
-          AppActionButton(
-            label: isConnected ? 'Send Location' : 'Connect First',
-            icon: Icons.send,
-            backgroundColor:
-                isConnected ? AppTheme.successGreen : AppTheme.gray400,
-            foregroundColor: AppTheme.cardWhite,
-            onPressed:
-                isConnected && hasLocation ? onSendLocation : null,
-          ),
-        ],
+      child: Text(
+        'Connected with room ${locationProvider.currentRoomId ?? "N/A"}\n'
+        'You: ${locationProvider.currentUserId ?? "N/A"}\n'
+        'Friends: ${locationProvider.roomUsers.length} online • ${locationProvider.connectionStatusMessage ?? "Connected"}',
+        style: TextStyle(
+          fontSize: 12,
+          color: AppTheme.successGreen,
+          fontWeight: FontWeight.w500,
+        ),
+        softWrap: true,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
 
-  Widget _buildRoutesSection() {
-    return StreamBuilder<Map<String, UserLocation>>(
-      stream: locationService.allLocationsStream,
-      initialData: locationService.userLocations,
-      builder: (context, snapshot) {
-        final userLocations = snapshot.data ?? {};
-        final currentUserId = locationService.currentUserId;
+  Widget _buildLocationSenderSection(BuildContext context) {
+    return Consumer<LocationProvider>(
+      builder: (context, locationProvider, _) {
+        final isConnected = locationProvider.isConnected;
+        final hasLocation = currentLocation != null;
+
+        return SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppTheme.spacingMedium,
+            vertical: AppTheme.spacingSmall,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.my_location,
+                    color:
+                        hasLocation ? AppTheme.successGreen : AppTheme.gray600,
+                    size: 16,
+                  ),
+                  SizedBox(width: AppTheme.spacingSmall - 2),
+                  Text(
+                    'Send them your location',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textDark,
+                    ),
+                  ),
+                ],
+              ),
+              if (hasLocation) ...[
+                SizedBox(height: AppTheme.spacingSmall + 2),
+                Container(
+                  padding: EdgeInsets.all(AppTheme.spacingSmall),
+                  decoration: BoxDecoration(
+                    color: AppTheme.gray100,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    border: Border.all(color: AppTheme.gray200),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'You are currently on\nLat: ${currentLocation!.latitude.toStringAsFixed(5)} • Lng: ${currentLocation!.longitude.toStringAsFixed(5)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.infoBlue,
+                          ),
+                          softWrap: true,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              SizedBox(height: AppTheme.spacingSmall + 2),
+              AppActionButton(
+                label: isConnected ? 'Send Location' : 'Connect First',
+                icon: Icons.send,
+                backgroundColor:
+                    isConnected ? AppTheme.successGreen : AppTheme.gray400,
+                foregroundColor: AppTheme.cardWhite,
+                onPressed: isConnected && hasLocation ? onSendLocation : null,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRoutesSection(BuildContext context) {
+    return Consumer2<LocationProvider, RouteProvider>(
+      builder: (context, locationProvider, routeProvider, _) {
+        final userLocations = locationProvider.userLocations;
+        final currentUserId = locationProvider.currentUserId;
 
         final otherUsers =
             userLocations.entries.where((e) => e.key != currentUserId).toList();
@@ -370,10 +354,14 @@ class InteractivePane extends StatelessWidget {
                 ],
               ),
               SizedBox(height: AppTheme.spacingSmall + 2),
-              _buildRouteModeSelector(),
+              _buildRouteModeSelector(context, routeProvider),
               if (otherUsers.isNotEmpty) ...[
                 SizedBox(height: AppTheme.spacingSmall + 2),
-                _buildMergedShowRoutesToSection(otherUsers),
+                _buildMergedShowRoutesToSection(
+                  context,
+                  otherUsers,
+                  routeProvider,
+                ),
               ] else ...[
                 SizedBox(height: AppTheme.spacingSmall + 2),
                 Container(
@@ -411,9 +399,11 @@ class InteractivePane extends StatelessWidget {
   }
 
   Widget _buildMergedShowRoutesToSection(
+    BuildContext context,
     List<MapEntry<String, UserLocation>> otherUsers,
+    RouteProvider routeProvider,
   ) {
-    final isAllSelected = routeService.selectedUsers.isEmpty;
+    final isAllSelected = routeProvider.selectedUsers.isEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -431,10 +421,20 @@ class InteractivePane extends StatelessWidget {
           spacing: AppTheme.spacingSmall,
           runSpacing: AppTheme.spacingSmall,
           children: [
-            _buildAllUsersChip(isAllSelected, otherUsers),
+            _buildAllUsersChip(
+              context,
+              isAllSelected,
+              otherUsers,
+              routeProvider,
+            ),
             ...otherUsers.map(
-              (entry) =>
-                  _buildUserRouteChip(entry.key, entry.value, isAllSelected),
+              (entry) => _buildUserRouteChip(
+                context,
+                entry.key,
+                entry.value,
+                isAllSelected,
+                routeProvider,
+              ),
             ),
           ],
         ),
@@ -443,17 +443,17 @@ class InteractivePane extends StatelessWidget {
   }
 
   Widget _buildAllUsersChip(
+    BuildContext context,
     bool isAllSelected,
     List<MapEntry<String, UserLocation>> otherUsers,
+    RouteProvider routeProvider,
   ) {
     return InkWell(
       onTap: () {
         if (isAllSelected) {
-          routeService.setSelectedUsers(
-            otherUsers.map((e) => e.key).toList(),
-          );
+          routeProvider.setSelectedUsers(otherUsers.map((e) => e.key).toList());
         } else {
-          routeService.clearSelectedUsers();
+          routeProvider.clearSelectedUsers();
         }
         onRouteFilterChanged();
       },
@@ -499,17 +499,19 @@ class InteractivePane extends StatelessWidget {
   }
 
   Widget _buildUserRouteChip(
+    BuildContext context,
     String userId,
     UserLocation location,
     bool isAllSelected,
+    RouteProvider routeProvider,
   ) {
     final isUserSelected =
-        isAllSelected || routeService.selectedUsers.contains(userId);
+        isAllSelected || routeProvider.selectedUsers.contains(userId);
     final isEnabled = !isAllSelected;
 
     final routeInfo =
         currentLocation != null
-            ? routeService.getRouteInfo(
+            ? routeProvider.getRouteInfo(
               userId: userId,
               userLocation: location,
               currentLocation: currentLocation!,
@@ -521,9 +523,9 @@ class InteractivePane extends StatelessWidget {
           isEnabled
               ? () {
                 if (isUserSelected) {
-                  routeService.removeSelectedUser(userId);
+                  routeProvider.removeSelectedUser(userId);
                 } else {
-                  routeService.addSelectedUser(userId);
+                  routeProvider.addSelectedUser(userId);
                 }
                 onRouteFilterChanged();
               }
@@ -629,7 +631,10 @@ class InteractivePane extends StatelessWidget {
     );
   }
 
-  Widget _buildRouteModeSelector() {
+  Widget _buildRouteModeSelector(
+    BuildContext context,
+    RouteProvider routeProvider,
+  ) {
     final modes = ['driving', 'walking', 'cycling'];
     final icons = [
       Icons.directions_car,
@@ -640,7 +645,7 @@ class InteractivePane extends StatelessWidget {
     return Row(
       children: List.generate(modes.length, (index) {
         final mode = modes[index];
-        final isSelected = routeService.routeMode == mode;
+        final isSelected = routeProvider.routeMode == mode;
 
         return Expanded(
           child: Padding(
