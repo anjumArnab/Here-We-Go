@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import '../widgets/app_snack_bar.dart';
 import '../app_theme.dart';
 import '../models/route_data.dart';
 import '../views/map_webview.dart';
@@ -10,6 +11,7 @@ import '../services/user_location_handler.dart';
 import '../models/user_location.dart';
 import '../models/connection_status.dart';
 import '../widgets/interactive_pane.dart';
+
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -79,7 +81,7 @@ class _HomepageState extends State<Homepage> {
         });
 
         if (!status.isConnected) {
-          _showError('Disconnected from server');
+          AppSnackBar.showError(context, 'Disconnected from server');
         }
       }
     });
@@ -104,7 +106,7 @@ class _HomepageState extends State<Homepage> {
       location,
     ) {
       if (mounted) {
-        _showLocationUpdateNotification(location);
+        AppSnackBar.showLocationUpdate(context, location.userId);
       }
     });
 
@@ -116,7 +118,7 @@ class _HomepageState extends State<Homepage> {
 
     _errorSubscription = _locationService.errorStream.listen((error) {
       if (mounted) {
-        _showError(error);
+        AppSnackBar.showError(context, error);
       }
     });
   }
@@ -134,28 +136,6 @@ class _HomepageState extends State<Homepage> {
     }
   }
 
-  void _showLocationUpdateNotification(UserLocation location) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.location_on, color: AppTheme.cardWhite, size: 20),
-            SizedBox(width: AppTheme.spacingSmall),
-            Expanded(
-              child: Text(
-                '${location.userId} updated their location',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: AppTheme.infoBlue,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
   Future<void> _getCurrentLocation() async {
     final result = await _userLocationHandler.getCurrentLocation();
 
@@ -163,7 +143,7 @@ class _HomepageState extends State<Homepage> {
       setState(() => _locationPermissionGranted = result.isSuccess);
 
       if (!result.isSuccess && result.error != null) {
-        _showError(result.error!);
+        AppSnackBar.showError(context, result.error!);
       }
 
       if (_userLocationHandler.currentLocation != null) {
@@ -208,7 +188,7 @@ class _HomepageState extends State<Homepage> {
       }
     } catch (e) {
       debugPrint('Error updating user markers: $e');
-      _showError('Error updating markers: $e');
+      AppSnackBar.showError(context, 'Error updating markers: $e');
     }
   }
 
@@ -249,7 +229,7 @@ class _HomepageState extends State<Homepage> {
     } catch (e) {
       debugPrint('Error updating routes: $e');
       setState(() => isLoadingRoutes = false);
-      _showError('Error loading routes: $e');
+      AppSnackBar.showError(context, 'Error loading routes: $e');
     }
   }
 
@@ -438,25 +418,6 @@ class _HomepageState extends State<Homepage> {
     _mapController.fitBoundsWithPadding(50.0);
   }
 
-  void _showError(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.error, color: AppTheme.cardWhite, size: 20),
-              SizedBox(width: AppTheme.spacingSmall),
-              Expanded(child: Text(message)),
-            ],
-          ),
-          backgroundColor: AppTheme.errorRed,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 4),
-        ),
-      );
-    }
-  }
-
   void _refreshData() async {
     await _getCurrentLocation();
 
@@ -481,13 +442,7 @@ class _HomepageState extends State<Homepage> {
       debugPrint('No marker data found for index: $markerIndex');
       // Check if it's the current user marker (index 0)
       if (markerIndex == 0 && _locationPermissionGranted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Your Current Location'),
-            duration: Duration(seconds: 2),
-            backgroundColor: AppTheme.infoBlue,
-          ),
-        );
+        AppSnackBar.showInfo(context, 'Your Current Location');
       }
     }
   }
@@ -497,12 +452,7 @@ class _HomepageState extends State<Homepage> {
     if (_serverUrlController.text.isEmpty ||
         _roomIdController.text.isEmpty ||
         _userIdController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please fill all fields'),
-          backgroundColor: AppTheme.warningOrange,
-        ),
-      );
+      AppSnackBar.showWarning(context, 'Please fill all fields');
       return;
     }
 
@@ -517,12 +467,7 @@ class _HomepageState extends State<Homepage> {
     setState(() => _isConnecting = false);
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Connected successfully!'),
-          backgroundColor: AppTheme.successGreen,
-        ),
-      );
+      AppSnackBar.showSuccess(context, 'Connected successfully!');
     }
   }
 
@@ -538,12 +483,12 @@ class _HomepageState extends State<Homepage> {
       );
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Location sent successfully!'),
-            backgroundColor: AppTheme.successGreen,
-            duration: const Duration(seconds: 2),
-          ),
+        final sharedCount = _userLocations.length;
+        AppSnackBar.showLocationSent(
+          context,
+          _userLocationHandler.currentLocation!.latitude,
+          _userLocationHandler.currentLocation!.longitude,
+          sharedCount,
         );
       }
     }
@@ -675,44 +620,6 @@ class _HomepageState extends State<Homepage> {
                     onRouteModeChanged: _handleRouteModeChanged,
                     onRouteFilterChanged: _handleRouteFilterChanged,
                   ),
-
-                  // User count overlay
-                  if (_isConnected && _userLocations.isNotEmpty)
-                    Positioned(
-                      top: AppTheme.spacingMedium,
-                      right: AppTheme.spacingMedium,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppTheme.spacingSmall + 4,
-                          vertical: AppTheme.spacingSmall,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.cardWhite,
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.radiusXLarge,
-                          ),
-                          boxShadow: [AppTheme.lightShadow],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.people,
-                              size: 16,
-                              color: AppTheme.primaryGreen,
-                            ),
-                            SizedBox(width: AppTheme.spacingXSmall),
-                            Text(
-                              '${_userLocations.length + 1}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.primaryGreen,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
 
                   // Routes loading indicator
                   if (isLoadingRoutes)
