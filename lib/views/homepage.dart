@@ -12,7 +12,6 @@ import '../models/user_location.dart';
 import '../models/connection_status.dart';
 import '../widgets/interactive_pane.dart';
 
-
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
 
@@ -21,7 +20,6 @@ class Homepage extends StatefulWidget {
 }
 
 class _HomepageState extends State<Homepage> {
-
   final MapWebViewController _mapController = MapWebViewController();
   List<Marker> _markers = [];
   List<Polyline> _polylines = [];
@@ -43,6 +41,8 @@ class _HomepageState extends State<Homepage> {
   final TextEditingController _userIdController = TextEditingController();
   bool _isConnecting = false;
   bool _isExpanded = true;
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
 
   // Connection and user data
   bool _isConnected = false;
@@ -166,12 +166,12 @@ class _HomepageState extends State<Homepage> {
       // Create index map for marker clicks
       Map<int, MapEntry<String, UserLocation>> indexMap = {};
       int markerIndex = 0;
-      
-      // First marker is current user (if location permission granted)
+
+      // First marker is current user
       if (_locationPermissionGranted) {
         markerIndex++;
       }
-      
+
       // Add mappings for other user markers
       _userLocations.forEach((userId, userLocation) {
         indexMap[markerIndex] = MapEntry(userId, userLocation);
@@ -431,12 +431,14 @@ class _HomepageState extends State<Homepage> {
   // Handle marker clicks from WebView
   void _handleMarkerClick(int markerIndex) {
     debugPrint('Handling marker click for index: $markerIndex');
-    
+
     final markerData = _markerIndexMap[markerIndex];
     if (markerData != null) {
       final userId = markerData.key;
       final userLocation = markerData.value;
-      debugPrint('Found marker data: $userId at ${userLocation.latitude}, ${userLocation.longitude}');
+      debugPrint(
+        'Found marker data: $userId at ${userLocation.latitude}, ${userLocation.longitude}',
+      );
       _showUserInfo(userId, userLocation);
     } else {
       debugPrint('No marker data found for index: $markerIndex');
@@ -447,7 +449,7 @@ class _HomepageState extends State<Homepage> {
     }
   }
 
-  // InteractiveContainer handlers
+  // InteractivePane handlers
   Future<void> _handleConnect() async {
     if (_serverUrlController.text.isEmpty ||
         _roomIdController.text.isEmpty ||
@@ -512,6 +514,13 @@ class _HomepageState extends State<Homepage> {
     });
   }
 
+  // Handle page changes in InteractivePane
+  void _handlePageChanged(int page) {
+    setState(() {
+      _currentPage = page;
+    });
+  }
+
   @override
   void dispose() {
     _connectionSubscription?.cancel();
@@ -523,6 +532,8 @@ class _HomepageState extends State<Homepage> {
     _serverUrlController.dispose();
     _roomIdController.dispose();
     _userIdController.dispose();
+
+    _pageController.dispose();
 
     _routeService.dispose();
     _userLocationHandler.dispose();
@@ -597,12 +608,12 @@ class _HomepageState extends State<Homepage> {
                     markers: _markers,
                     polylines: _polylines,
                     onMarkerTap: (int markerIndex) {
-                      debugPrint('MapWebView onMarkerTap called with index: $markerIndex');
+                      debugPrint(
+                        'MapWebView onMarkerTap called with index: $markerIndex',
+                      );
                       _handleMarkerClick(markerIndex);
                     },
                   ),
-
-                  // InteractivePane overlay
                   InteractivePane(
                     locationService: _locationService,
                     routeService: _routeService,
@@ -619,6 +630,9 @@ class _HomepageState extends State<Homepage> {
                         () => setState(() => _isExpanded = !_isExpanded),
                     onRouteModeChanged: _handleRouteModeChanged,
                     onRouteFilterChanged: _handleRouteFilterChanged,
+                    pageController: _pageController,
+                    currentPage: _currentPage,
+                    onPageChanged: _handlePageChanged,
                   ),
 
                   // Routes loading indicator
