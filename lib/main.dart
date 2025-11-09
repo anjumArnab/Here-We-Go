@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'providers/location_provider.dart';
+import 'providers/route_provider.dart';
+import 'providers/user_location_provider.dart';
 import '../views/homepage.dart';
 
 void main() {
-  runApp(HereWeGo());
+  runApp(const HereWeGo());
 }
 
 class HereWeGo extends StatelessWidget {
@@ -11,13 +15,18 @@ class HereWeGo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'HereWeGo',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        textTheme: GoogleFonts.poppinsTextTheme(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
+        ChangeNotifierProvider(create: (_) => RouteProvider()),
+        ChangeNotifierProvider(create: (_) => UserLocationProvider()),
+      ],
+      child: MaterialApp(
+        title: 'Here We Go',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(textTheme: GoogleFonts.poppinsTextTheme()),
+        home: const Homepage(),
       ),
-      home: Homepage(),
     );
   }
 }
