@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 class AppTextField extends StatelessWidget {
   final TextEditingController controller;
-  final String label;
   final String hint;
   final IconData icon;
   final bool enabled;
@@ -16,7 +15,6 @@ class AppTextField extends StatelessWidget {
   const AppTextField({
     super.key,
     required this.controller,
-    required this.label,
     required this.hint,
     required this.icon,
     this.enabled = true,
@@ -36,23 +34,6 @@ class AppTextField extends StatelessWidget {
       keyboardType: keyboardType,
       maxLength: maxLength,
       onSaved: onSaved,
-      validator:
-          validator ??
-          (minValue != null && maxValue != null
-              ? (value) {
-                if (value == null || value.isEmpty) {
-                  return '$label is required';
-                }
-                final double? parsedValue = double.tryParse(value);
-                if (parsedValue == null) {
-                  return 'Please enter a valid number';
-                }
-                if (parsedValue < minValue! || parsedValue > maxValue!) {
-                  return '$label must be between $minValue and $maxValue';
-                }
-                return null;
-              }
-              : null),
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
