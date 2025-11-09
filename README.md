@@ -1,6 +1,6 @@
 # Here We Go
 
-Here We Go is a real-time location sharing solution built with **Node.js** and **Socket.IO**. It provides seamless **route visualization** between shared locations by integrating **OpenStreetMap** with the **OSRM API**.  
+Here We Go is a real-time location sharing solution built with **Node.js** and **Socket.IO**. It provides **route visualization** between shared locations by integrating **OpenStreetMap** with the **OSRM API** and **Provider** for state mangement.
 
 ## Features
 - Real-time location sharing between users  
