@@ -198,11 +198,7 @@ class UserLocationHandler {
                   width: 3,
                 ),
               ),
-              child: Icon(
-                Icons.person_pin_circle,
-                color: _markerColors[colorIndex % _markerColors.length],
-                size: 28,
-              ),
+              child: Text(userLocation.userId)
             ),
           ),
         ),
