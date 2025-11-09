@@ -10,7 +10,7 @@ import '../services/route_service.dart';
 import '../models/user_location.dart';
 import '../models/connection_status.dart';
 
-class InteractivePane extends StatefulWidget {
+class InteractivePane extends StatelessWidget {
   final LocationService locationService;
   final RouteService routeService;
   final LatLng? currentLocation;
@@ -25,6 +25,10 @@ class InteractivePane extends StatefulWidget {
   final VoidCallback onToggleExpand;
   final Function(String) onRouteModeChanged;
   final VoidCallback onRouteFilterChanged;
+  final PageController pageController;
+  final int currentPage;
+  final ValueChanged<int> onPageChanged;
+
   const InteractivePane({
     super.key,
     required this.locationService,
@@ -41,21 +45,10 @@ class InteractivePane extends StatefulWidget {
     required this.onToggleExpand,
     required this.onRouteModeChanged,
     required this.onRouteFilterChanged,
+    required this.pageController,
+    required this.currentPage,
+    required this.onPageChanged,
   });
-
-  @override
-  State<InteractivePane> createState() => _InteractivePaneState();
-}
-
-class _InteractivePaneState extends State<InteractivePane> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,19 +69,15 @@ class _InteractivePaneState extends State<InteractivePane> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildHeader(),
-            if (widget.isExpanded)
+            if (isExpanded)
               Flexible(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Flexible(
                       child: PageView(
-                        controller: _pageController,
-                        onPageChanged: (index) {
-                          setState(() {
-                            _currentPage = index;
-                          });
-                        },
+                        controller: pageController,
+                        onPageChanged: onPageChanged,
                         children: [
                           _buildServerConnectionSection(),
                           _buildLocationSenderSection(),
@@ -113,13 +102,13 @@ class _InteractivePaneState extends State<InteractivePane> {
         backgroundColor: AppTheme.primaryNavy,
         child: IconButton(
           icon: Icon(
-            widget.isExpanded ? Icons.expand_more : Icons.expand_less,
+            isExpanded ? Icons.expand_more : Icons.expand_less,
             color: AppTheme.cardWhite,
             size: 20,
           ),
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
-          onPressed: widget.onToggleExpand,
+          onPressed: onToggleExpand,
         ),
       ),
     );
@@ -136,11 +125,11 @@ class _InteractivePaneState extends State<InteractivePane> {
         children: List.generate(3, (index) {
           return Container(
             margin: EdgeInsets.symmetric(horizontal: AppTheme.spacingXSmall),
-            width: _currentPage == index ? 24 : 8,
+            width: currentPage == index ? 24 : 8,
             height: 8,
             decoration: BoxDecoration(
               color:
-                  _currentPage == index
+                  currentPage == index
                       ? AppTheme.primaryGreen
                       : AppTheme.gray300,
               borderRadius: BorderRadius.circular(AppTheme.spacingXSmall),
@@ -152,7 +141,7 @@ class _InteractivePaneState extends State<InteractivePane> {
   }
 
   Widget _buildServerConnectionSection() {
-    final isConnected = widget.locationService.isConnected;
+    final isConnected = locationService.isConnected;
 
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(
@@ -184,7 +173,7 @@ class _InteractivePaneState extends State<InteractivePane> {
           SizedBox(height: AppTheme.spacingSmall + 2),
           if (!isConnected) ...[
             AppTextField(
-              controller: widget.serverUrlController,
+              controller: serverUrlController,
               label: '',
               hint: 'https://abc123.ngrok.io',
               icon: Icons.cloud,
@@ -194,7 +183,7 @@ class _InteractivePaneState extends State<InteractivePane> {
               children: [
                 Expanded(
                   child: AppTextField(
-                    controller: widget.roomIdController,
+                    controller: roomIdController,
                     label: '',
                     hint: 'Room ID',
                     icon: Icons.meeting_room,
@@ -203,7 +192,7 @@ class _InteractivePaneState extends State<InteractivePane> {
                 SizedBox(width: AppTheme.spacingSmall),
                 Expanded(
                   child: AppTextField(
-                    controller: widget.userIdController,
+                    controller: userIdController,
                     label: '',
                     hint: 'User ID',
                     icon: Icons.person,
@@ -217,7 +206,7 @@ class _InteractivePaneState extends State<InteractivePane> {
               icon: Icons.link,
               backgroundColor: AppTheme.infoBlue,
               foregroundColor: AppTheme.cardWhite,
-              onPressed: widget.isConnecting ? null : widget.onConnect,
+              onPressed: isConnecting ? null : onConnect,
             ),
           ] else ...[
             _buildConnectionInfo(),
@@ -227,7 +216,7 @@ class _InteractivePaneState extends State<InteractivePane> {
               icon: Icons.link_off,
               backgroundColor: AppTheme.errorRed,
               foregroundColor: AppTheme.cardWhite,
-              onPressed: widget.onDisconnect,
+              onPressed: onDisconnect,
             ),
           ],
         ],
@@ -237,12 +226,12 @@ class _InteractivePaneState extends State<InteractivePane> {
 
   Widget _buildConnectionInfo() {
     return StreamBuilder<ConnectionStatus>(
-      stream: widget.locationService.connectionStream,
+      stream: locationService.connectionStream,
       initialData: ConnectionStatus(
-        isConnected: widget.locationService.isConnected,
-        roomId: widget.locationService.currentRoomId,
-        userId: widget.locationService.currentUserId,
-        roomUsers: widget.locationService.roomUsers,
+        isConnected: locationService.isConnected,
+        roomId: locationService.currentRoomId,
+        userId: locationService.currentUserId,
+        roomUsers: locationService.roomUsers,
       ),
       builder: (context, snapshot) {
         final status = snapshot.data;
@@ -275,8 +264,8 @@ class _InteractivePaneState extends State<InteractivePane> {
   }
 
   Widget _buildLocationSenderSection() {
-    final isConnected = widget.locationService.isConnected;
-    final hasLocation = widget.currentLocation != null;
+    final isConnected = locationService.isConnected;
+    final hasLocation = currentLocation != null;
 
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(
@@ -318,7 +307,7 @@ class _InteractivePaneState extends State<InteractivePane> {
                 children: [
                   Expanded(
                     child: Text(
-                      'You are currently on\nLat: ${widget.currentLocation!.latitude.toStringAsFixed(5)} • Lng: ${widget.currentLocation!.longitude.toStringAsFixed(5)}',
+                      'You are currently on\nLat: ${currentLocation!.latitude.toStringAsFixed(5)} • Lng: ${currentLocation!.longitude.toStringAsFixed(5)}',
                       style: TextStyle(
                         fontSize: 12,
                         color: AppTheme.infoBlue,
@@ -339,7 +328,7 @@ class _InteractivePaneState extends State<InteractivePane> {
                 isConnected ? AppTheme.successGreen : AppTheme.gray400,
             foregroundColor: AppTheme.cardWhite,
             onPressed:
-                isConnected && hasLocation ? widget.onSendLocation : null,
+                isConnected && hasLocation ? onSendLocation : null,
           ),
         ],
       ),
@@ -348,11 +337,11 @@ class _InteractivePaneState extends State<InteractivePane> {
 
   Widget _buildRoutesSection() {
     return StreamBuilder<Map<String, UserLocation>>(
-      stream: widget.locationService.allLocationsStream,
-      initialData: widget.locationService.userLocations,
+      stream: locationService.allLocationsStream,
+      initialData: locationService.userLocations,
       builder: (context, snapshot) {
         final userLocations = snapshot.data ?? {};
-        final currentUserId = widget.locationService.currentUserId;
+        final currentUserId = locationService.currentUserId;
 
         final otherUsers =
             userLocations.entries.where((e) => e.key != currentUserId).toList();
@@ -424,7 +413,7 @@ class _InteractivePaneState extends State<InteractivePane> {
   Widget _buildMergedShowRoutesToSection(
     List<MapEntry<String, UserLocation>> otherUsers,
   ) {
-    final isAllSelected = widget.routeService.selectedUsers.isEmpty;
+    final isAllSelected = routeService.selectedUsers.isEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -460,13 +449,13 @@ class _InteractivePaneState extends State<InteractivePane> {
     return InkWell(
       onTap: () {
         if (isAllSelected) {
-          widget.routeService.setSelectedUsers(
+          routeService.setSelectedUsers(
             otherUsers.map((e) => e.key).toList(),
           );
         } else {
-          widget.routeService.clearSelectedUsers();
+          routeService.clearSelectedUsers();
         }
-        widget.onRouteFilterChanged();
+        onRouteFilterChanged();
       },
       borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
       child: Container(
@@ -515,15 +504,15 @@ class _InteractivePaneState extends State<InteractivePane> {
     bool isAllSelected,
   ) {
     final isUserSelected =
-        isAllSelected || widget.routeService.selectedUsers.contains(userId);
+        isAllSelected || routeService.selectedUsers.contains(userId);
     final isEnabled = !isAllSelected;
 
     final routeInfo =
-        widget.currentLocation != null
-            ? widget.routeService.getRouteInfo(
+        currentLocation != null
+            ? routeService.getRouteInfo(
               userId: userId,
               userLocation: location,
-              currentLocation: widget.currentLocation!,
+              currentLocation: currentLocation!,
             )
             : null;
 
@@ -532,11 +521,11 @@ class _InteractivePaneState extends State<InteractivePane> {
           isEnabled
               ? () {
                 if (isUserSelected) {
-                  widget.routeService.removeSelectedUser(userId);
+                  routeService.removeSelectedUser(userId);
                 } else {
-                  widget.routeService.addSelectedUser(userId);
+                  routeService.addSelectedUser(userId);
                 }
-                widget.onRouteFilterChanged();
+                onRouteFilterChanged();
               }
               : null,
       borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
@@ -651,7 +640,7 @@ class _InteractivePaneState extends State<InteractivePane> {
     return Row(
       children: List.generate(modes.length, (index) {
         final mode = modes[index];
-        final isSelected = widget.routeService.routeMode == mode;
+        final isSelected = routeService.routeMode == mode;
 
         return Expanded(
           child: Padding(
@@ -659,7 +648,7 @@ class _InteractivePaneState extends State<InteractivePane> {
               right: index < modes.length - 1 ? AppTheme.spacingSmall - 2 : 0,
             ),
             child: InkWell(
-              onTap: () => widget.onRouteModeChanged(mode),
+              onTap: () => onRouteModeChanged(mode),
               borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
               child: Container(
                 padding: EdgeInsets.symmetric(
