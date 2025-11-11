@@ -40,28 +40,19 @@ class UserLocationHandler {
     _isLoadingLocation = true;
 
     try {
-      // Check if location services are enabled
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        debugPrint('Location services are disabled.');
-        _currentLocation = defaultLocation;
-        _isLoadingLocation = false;
-        return LocationResult.error(
-          'Location services are disabled. Using default location.',
-          defaultLocation,
-        );
-      }
-
-      // Check location permission
+      // Check and request location permission FIRST
       LocationPermission permission = await Geolocator.checkPermission();
+
       if (permission == LocationPermission.denied) {
+        debugPrint('Location permission denied, requesting...');
         permission = await Geolocator.requestPermission();
+
         if (permission == LocationPermission.denied) {
-          debugPrint('Location permissions are denied');
+          debugPrint('Location permissions are denied by user');
           _currentLocation = defaultLocation;
           _isLoadingLocation = false;
           return LocationResult.error(
-            'Location permission denied. Using default location.',
+            'Location permission denied. Please grant permission in settings.',
             defaultLocation,
           );
         }
@@ -72,9 +63,35 @@ class UserLocationHandler {
         _currentLocation = defaultLocation;
         _isLoadingLocation = false;
         return LocationResult.error(
-          'Location permission permanently denied. Using default location.',
+          'Location permission permanently denied. Please enable in device settings.',
           defaultLocation,
         );
+      }
+
+      // NOW check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        debugPrint('Location services are disabled.');
+
+        // Try to open location settings automatically
+        bool opened = await Geolocator.openLocationSettings();
+
+        if (opened) {
+          // Wait for user to potentially enable GPS
+          await Future.delayed(Duration(seconds: 2));
+
+          // Check again after user returns
+          serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        }
+
+        if (!serviceEnabled) {
+          _currentLocation = defaultLocation;
+          _isLoadingLocation = false;
+          return LocationResult.error(
+            'GPS is disabled. Please enable Location Services in your device settings.',
+            defaultLocation,
+          );
+        }
       }
 
       // Get current position
@@ -198,7 +215,7 @@ class UserLocationHandler {
                   width: 3,
                 ),
               ),
-              child: Text(userLocation.userId)
+              child: Text(userLocation.userId),
             ),
           ),
         ),
