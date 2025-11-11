@@ -37,6 +37,9 @@ class _HomepageState extends State<Homepage> {
   // Route display settings
   bool _showRoutes = false;
 
+  // Auto-zoom flag - prevents zoom reset on updates
+  bool _hasInitializedMap = false;
+
   @override
   void initState() {
     super.initState();
@@ -105,8 +108,15 @@ class _HomepageState extends State<Homepage> {
         _markerIndexMap = indexMap;
       });
 
-      if (locationProvider.userLocations.length > 1) {
-        _showAllLocations();
+      // AUTO-ZOOM: Only on initial load with multiple users
+      if (!_hasInitializedMap && locationProvider.userLocations.length > 1) {
+        _hasInitializedMap = true;
+        // Small delay to ensure markers are rendered
+        Future.delayed(Duration(milliseconds: 300), () {
+          if (mounted) {
+            _showAllLocations();
+          }
+        });
       }
     } catch (e) {
       debugPrint('Error updating user markers: $e');
@@ -401,6 +411,11 @@ class _HomepageState extends State<Homepage> {
   Future<void> _handleDisconnect() async {
     final locationProvider = context.read<LocationProvider>();
     await locationProvider.disconnect();
+
+    // Reset zoom flag when disconnecting
+    setState(() {
+      _hasInitializedMap = false;
+    });
   }
 
   Future<void> _handleSendLocation() async {
@@ -638,7 +653,11 @@ class _HomepageState extends State<Homepage> {
                         FloatingActionButton(
                           mini: true,
                           shape: const CircleBorder(),
-                          onPressed: _showAllLocations,
+                          onPressed: () {
+                            // Mark as initialized to prevent auto-zoom on next update
+                            _hasInitializedMap = true;
+                            _showAllLocations();
+                          },
                           backgroundColor: AppTheme.primaryNavy,
                           child: Icon(
                             Icons.zoom_out_map,
