@@ -365,8 +365,7 @@ class _MapWebViewState extends State<MapWebView> {
       markers = {};
     }
 
-
-    // Add marker
+  // Add marker
   function addMarker(lat, lng, color, type, id, userId) {
   try {
     var marker;
