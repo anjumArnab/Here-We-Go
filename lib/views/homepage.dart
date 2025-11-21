@@ -83,7 +83,6 @@ class _HomepageState extends State<Homepage> {
       final markers = userLocationProvider.generateUserMarkers(
         userLocations: locationProvider.userLocations,
         currentUserId: locationProvider.currentUserId,
-        onMarkerTap: _showUserInfo,
       );
 
       // Create index map for marker clicks

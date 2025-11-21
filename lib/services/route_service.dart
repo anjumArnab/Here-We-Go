@@ -59,10 +59,6 @@ class RouteService {
     _selectedUsers.clear();
   }
 
-  bool isApiConfigured() {
-    return true;
-  }
-
   /// Get route points between two locations using OSRM API
   Future<List<LatLng>> getRoutePoints(LatLng origin, LatLng destination) async {
     // Create cache key

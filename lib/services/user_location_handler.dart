@@ -40,11 +40,13 @@ class UserLocationHandler {
     _isLoadingLocation = true;
 
     try {
-      // Check and request location permission FIRST
+      // Check the current location permission status
       LocationPermission permission = await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied) {
         debugPrint('Location permission denied, requesting...');
+
+        // Show the system permission dialog to request location access
         permission = await Geolocator.requestPermission();
 
         if (permission == LocationPermission.denied) {
@@ -68,12 +70,12 @@ class UserLocationHandler {
         );
       }
 
-      // NOW check if location services are enabled
+      // Check if location services are enabled on the device
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         debugPrint('Location services are disabled.');
 
-        // Try to open location settings automatically
+        // Try to open location settings
         bool opened = await Geolocator.openLocationSettings();
 
         if (opened) {
@@ -126,7 +128,7 @@ class UserLocationHandler {
     return LocationResult.success(defaultLocation);
   }
 
-  /// Create marker for current user location
+  /// Create marker for current user location (hasPermission flag determines gps location or default location)
   Widget createCurrentLocationMarker({bool hasPermission = true}) {
     return Container(
       width: 50,
@@ -152,7 +154,7 @@ class UserLocationHandler {
     required Map<String, UserLocation> userLocations,
     required String? currentUserId,
     bool hasLocationPermission = true,
-    Function(String userId, UserLocation userLocation)? onMarkerTap,
+    //Function(String userId, UserLocation userLocation)? onMarkerTap,
   }) {
     List<Marker> markers = [];
 
@@ -163,22 +165,9 @@ class UserLocationHandler {
           point: _currentLocation!,
           width: 50,
           height: 50,
-          child: GestureDetector(
-            onTap: () {
-              if (onMarkerTap != null && currentUserId != null) {
-                UserLocation currentUserLocation = UserLocation(
-                  userId: currentUserId,
-                  latitude: _currentLocation!.latitude,
-                  longitude: _currentLocation!.longitude,
-                  timestamp: DateTime.now().toIso8601String(),
-                );
-                onMarkerTap(currentUserId, currentUserLocation);
-              }
-            },
-            child: createCurrentLocationMarker(
+          child: createCurrentLocationMarker(
               hasPermission: hasLocationPermission,
             ),
-          ),
         ),
       );
     }
@@ -196,30 +185,27 @@ class UserLocationHandler {
       }
 
       // Create marker for this user
-      markers.add(
-        Marker(
-          point: LatLng(userLocation.latitude, userLocation.longitude),
+       markers.add(
+      Marker(
+        point: LatLng(userLocation.latitude, userLocation.longitude),
+        width: 50,
+        height: 50,
+        child: Container(
           width: 50,
           height: 50,
-          child: GestureDetector(
-            onTap: () => onMarkerTap?.call(userId, userLocation),
-            child: Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: _markerColors[colorIndex % _markerColors.length]
-                    .withOpacity(0.3),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: _markerColors[colorIndex % _markerColors.length],
-                  width: 3,
-                ),
-              ),
-              child: Text(userLocation.userId),
+          decoration: BoxDecoration(
+            color: _markerColors[colorIndex % _markerColors.length]
+                .withOpacity(0.3),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: _markerColors[colorIndex % _markerColors.length],
+              width: 3,
             ),
           ),
+          child: Text(userLocation.userId),
         ),
-      );
+      ),
+    );
 
       colorIndex++;
     }
@@ -305,64 +291,6 @@ class UserLocationHandler {
     } catch (e) {
       return "Unknown";
     }
-  }
-
-  /// Check if location permission is available
-  Future<bool> isLocationPermissionGranted() async {
-    LocationPermission permission = await Geolocator.checkPermission();
-    return permission == LocationPermission.always ||
-        permission == LocationPermission.whileInUse;
-  }
-
-  /// Check if location services are enabled
-  Future<bool> isLocationServiceEnabled() async {
-    return await Geolocator.isLocationServiceEnabled();
-  }
-
-  /// Request location permission
-  Future<LocationPermission> requestLocationPermission() async {
-    return await Geolocator.requestPermission();
-  }
-
-  /// Create user info widget for marker popup
-  Widget createUserInfoWidget(String userId, UserLocation userLocation) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            userId,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Lat: ${userLocation.latitude.toStringAsFixed(6)}',
-            style: const TextStyle(fontSize: 12),
-          ),
-          Text(
-            'Lng: ${userLocation.longitude.toStringAsFixed(6)}',
-            style: const TextStyle(fontSize: 12),
-          ),
-          Text(
-            'Updated: ${formatTimestamp(userLocation.timestamp)}',
-            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-          ),
-        ],
-      ),
-    );
   }
 
   /// Dispose of resources

@@ -208,7 +208,7 @@ class _MapWebViewState extends State<MapWebView> {
           markerType = 'current';
           color = _colorToHex(icon.color ?? Colors.blue);
         }
-      } else if (marker.child is GestureDetector) {
+      } else if (marker.child is Container) {
         // This is likely a user marker with custom styling
         markerType = 'user';
         // Use different colors for different users

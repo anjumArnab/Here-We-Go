@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:geolocator/geolocator.dart';
 import '../services/user_location_handler.dart';
 import '../models/location_result.dart';
 import '../models/user_location.dart';
@@ -48,13 +47,11 @@ class UserLocationProvider extends ChangeNotifier {
   List<Marker> generateUserMarkers({
     required Map<String, UserLocation> userLocations,
     required String? currentUserId,
-    Function(String userId, UserLocation userLocation)? onMarkerTap,
   }) {
     return _userLocationHandler.generateUserMarkers(
       userLocations: userLocations,
       currentUserId: currentUserId,
       hasLocationPermission: _locationPermissionGranted,
-      onMarkerTap: onMarkerTap,
     );
   }
 
@@ -76,18 +73,6 @@ class UserLocationProvider extends ChangeNotifier {
 
   String formatTimestamp(String timestamp) {
     return _userLocationHandler.formatTimestamp(timestamp);
-  }
-
-  Future<bool> isLocationPermissionGranted() async {
-    return await _userLocationHandler.isLocationPermissionGranted();
-  }
-
-  Future<bool> isLocationServiceEnabled() async {
-    return await _userLocationHandler.isLocationServiceEnabled();
-  }
-
-  Future<LocationPermission> requestLocationPermission() async {
-    return await _userLocationHandler.requestLocationPermission();
   }
 
   void clearLocationError() {
