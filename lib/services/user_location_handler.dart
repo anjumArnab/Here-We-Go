@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:herewego/models/map_marker_data.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/location_result.dart';
@@ -128,48 +129,32 @@ class UserLocationHandler {
     return LocationResult.success(defaultLocation);
   }
 
-  /// Create marker for current user location (hasPermission flag determines gps location or default location)
-  Widget createCurrentLocationMarker({bool hasPermission = true}) {
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        color: (hasPermission ? Colors.blue : Colors.grey).withOpacity(0.3),
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: hasPermission ? Colors.blue : Colors.grey,
-          width: 3,
-        ),
-      ),
-      child: Icon(
-        hasPermission ? Icons.location_pin : Icons.location_on,
-        color: hasPermission ? Colors.blue : Colors.grey,
-        size: 28,
-      ),
+  /// Create marker data for current user location
+  MapMarkerData? createCurrentLocationMarkerData({bool hasPermission = true}) {
+    if (_currentLocation == null) return null;
+
+    return MapMarkerData(
+      point: _currentLocation!,
+      color: hasPermission ? Colors.blue : Colors.grey,
+      type: MarkerType.currentLocation,
+      hasPermission: hasPermission,
     );
   }
 
-  /// Generate markers for all user locations
-  List<Marker> generateUserMarkers({
+  /// Generate marker data for all user locations
+  List<MapMarkerData> generateUserMarkerData({
     required Map<String, UserLocation> userLocations,
     required String? currentUserId,
     bool hasLocationPermission = true,
-    //Function(String userId, UserLocation userLocation)? onMarkerTap,
   }) {
-    List<Marker> markers = [];
+    List<MapMarkerData> markers = [];
 
     // Add current location marker if available
-    if (_currentLocation != null) {
-      markers.add(
-        Marker(
-          point: _currentLocation!,
-          width: 50,
-          height: 50,
-          child: createCurrentLocationMarker(
-              hasPermission: hasLocationPermission,
-            ),
-        ),
-      );
+    final currentMarker = createCurrentLocationMarkerData(
+      hasPermission: hasLocationPermission,
+    );
+    if (currentMarker != null) {
+      markers.add(currentMarker);
     }
 
     // Add markers for all other users
@@ -178,34 +163,21 @@ class UserLocationHandler {
       String userId = entry.key;
       UserLocation userLocation = entry.value;
 
-      // Skip if this is the current user (already have current_location marker)
+      // Skip if this is the current user (already have current location marker)
       if (userId == currentUserId) {
         colorIndex++;
         continue;
       }
 
-      // Create marker for this user
-       markers.add(
-      Marker(
-        point: LatLng(userLocation.latitude, userLocation.longitude),
-        width: 50,
-        height: 50,
-        child: Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: _markerColors[colorIndex % _markerColors.length]
-                .withOpacity(0.3),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: _markerColors[colorIndex % _markerColors.length],
-              width: 3,
-            ),
-          ),
-          child: Text(userLocation.userId),
+      // Create marker data for this user
+      markers.add(
+        MapMarkerData(
+          point: LatLng(userLocation.latitude, userLocation.longitude),
+          color: _markerColors[colorIndex % _markerColors.length],
+          type: MarkerType.user,
+          userId: userId,
         ),
-      ),
-    );
+      );
 
       colorIndex++;
     }

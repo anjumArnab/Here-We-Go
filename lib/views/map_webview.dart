@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:herewego/models/map_marker_data.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -11,7 +12,7 @@ class MapWebView extends StatefulWidget {
   final double initialZoom;
   final double minZoom;
   final double maxZoom;
-  final List<Marker> markers;
+  final List<MapMarkerData> markers;
   final List<Polyline> polylines;
   final MapWebViewController? controller;
   final Function(LatLng)? onTap;
@@ -148,10 +149,12 @@ class _MapWebViewState extends State<MapWebView> {
     }
   }
 
-  bool _areMarkersEqual(List<Marker> old, List<Marker> current) {
+  bool _areMarkersEqual(List<MapMarkerData> old, List<MapMarkerData> current) {
     if (old.length != current.length) return false;
     for (int i = 0; i < old.length; i++) {
       if (old[i].point != current[i].point) return false;
+      if (old[i].color != current[i].color) return false;
+      if (old[i].type != current[i].type) return false;
     }
     return true;
   }
@@ -196,38 +199,12 @@ class _MapWebViewState extends State<MapWebView> {
       final marker = widget.markers[i];
       final lat = marker.point.latitude;
       final lng = marker.point.longitude;
-
-      // Extract marker information from the Flutter marker
-      String markerType = 'default';
-      String color = 'blue';
-
-      // Try to determine marker type from the widget
-      if (marker.child is Icon) {
-        final icon = marker.child as Icon;
-        if (icon.icon == Icons.location_pin || icon.icon == Icons.location_on) {
-          markerType = 'current';
-          color = _colorToHex(icon.color ?? Colors.blue);
-        }
-      } else if (marker.child is Container) {
-        // This is likely a user marker with custom styling
-        markerType = 'user';
-        // Use different colors for different users
-        final colors = [
-          '#ef4444',
-          '#3b82f6',
-          '#10b981',
-          '#f97316',
-          '#8b5cf6',
-          '#06b6d4',
-          '#ec4899',
-          '#6366f1',
-        ];
-        color = colors[i % colors.length];
-      }
+      final color = marker.colorHex;
+      final type = marker.typeString;
 
       _webViewController.runJavaScript('''
-        addMarker($lat, $lng, '$color', '$markerType', 'marker_$i');
-      ''');
+      addMarker($lat, $lng, '$color', '$type', 'marker_$i');
+    ''');
     }
   }
 

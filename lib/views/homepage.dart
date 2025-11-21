@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:herewego/models/map_marker_data.dart';
 import 'package:provider/provider.dart';
 import '../widgets/app_snack_bar.dart';
 import '../app_theme.dart';
@@ -20,7 +21,7 @@ class Homepage extends StatefulWidget {
 
 class _HomepageState extends State<Homepage> {
   final MapWebViewController _mapController = MapWebViewController();
-  List<Marker> _markers = [];
+  List<MapMarkerData> _markers = [];
   List<Polyline> _polylines = [];
 
   // Store marker index to user mapping for click handling
@@ -37,7 +38,7 @@ class _HomepageState extends State<Homepage> {
   // Route display settings
   bool _showRoutes = false;
 
-  // Auto-zoom flag - prevents zoom reset on updates
+  // Prevents zoom reset on updates
   bool _hasInitializedMap = false;
 
   @override
@@ -80,7 +81,7 @@ class _HomepageState extends State<Homepage> {
     final locationProvider = context.read<LocationProvider>();
 
     try {
-      final markers = userLocationProvider.generateUserMarkers(
+      final markers = userLocationProvider.generateUserMarkerData(
         userLocations: locationProvider.userLocations,
         currentUserId: locationProvider.currentUserId,
       );
@@ -89,7 +90,7 @@ class _HomepageState extends State<Homepage> {
       Map<int, MapEntry<String, UserLocation>> indexMap = {};
       int markerIndex = 0;
 
-      // First marker is current user
+      // First marker is current user (if location permission granted)
       if (userLocationProvider.locationPermissionGranted) {
         markerIndex++;
       }
@@ -107,10 +108,9 @@ class _HomepageState extends State<Homepage> {
         _markerIndexMap = indexMap;
       });
 
-      // AUTO-ZOOM: Only on initial load with multiple users
+      // Auto zoom: Only on initial load with multiple users
       if (!_hasInitializedMap && locationProvider.userLocations.length > 1) {
         _hasInitializedMap = true;
-        // Small delay to ensure markers are rendered
         Future.delayed(Duration(milliseconds: 300), () {
           if (mounted) {
             _showAllLocations();
@@ -188,7 +188,7 @@ class _HomepageState extends State<Homepage> {
                 Icon(Icons.person, color: AppTheme.infoBlue),
                 SizedBox(width: AppTheme.spacingSmall),
                 Text(
-                  'User: $userId',
+                  'Friend: $userId',
                   style: TextStyle(
                     color: AppTheme.textDark,
                     fontSize: 16,

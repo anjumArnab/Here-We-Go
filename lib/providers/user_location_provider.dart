@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:herewego/models/map_marker_data.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/user_location_handler.dart';
 import '../models/location_result.dart';
@@ -44,11 +45,11 @@ class UserLocationProvider extends ChangeNotifier {
     return result;
   }
 
-  List<Marker> generateUserMarkers({
+  List<MapMarkerData> generateUserMarkerData({
     required Map<String, UserLocation> userLocations,
     required String? currentUserId,
   }) {
-    return _userLocationHandler.generateUserMarkers(
+    return _userLocationHandler.generateUserMarkerData(
       userLocations: userLocations,
       currentUserId: currentUserId,
       hasLocationPermission: _locationPermissionGranted,
