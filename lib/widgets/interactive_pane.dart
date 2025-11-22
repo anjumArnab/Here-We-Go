@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'app_action_button.dart';
 import '../app_theme.dart';
 import '../widgets/app_text_field.dart';
+import '../providers/connection_provider.dart';
 import '../providers/location_provider.dart';
 import '../providers/route_provider.dart';
 import '../models/user_location.dart';
@@ -135,10 +136,10 @@ class InteractivePane extends StatelessWidget {
   }
 
   Widget _buildServerConnectionSection(BuildContext context) {
-    return Consumer<LocationProvider>(
-      builder: (context, locationProvider, _) {
-        final isConnected = locationProvider.isConnected;
-        final isConnecting = locationProvider.isConnecting;
+    return Consumer<ConnectionProvider>(
+      builder: (context, connectionProvider, _) {
+        final isConnected = connectionProvider.isConnected;
+        final isConnecting = connectionProvider.isConnecting;
 
         return SingleChildScrollView(
           padding: EdgeInsets.symmetric(
@@ -204,7 +205,7 @@ class InteractivePane extends StatelessWidget {
                   onPressed: isConnecting ? null : onConnect,
                 ),
               ] else ...[
-                _buildConnectionInfo(locationProvider),
+                _buildConnectionInfo(connectionProvider),
                 SizedBox(height: AppTheme.spacingSmall + 2),
                 AppActionButton(
                   label: 'Disconnect',
@@ -221,7 +222,7 @@ class InteractivePane extends StatelessWidget {
     );
   }
 
-  Widget _buildConnectionInfo(LocationProvider locationProvider) {
+  Widget _buildConnectionInfo(ConnectionProvider connectionProvider) {
     return Container(
       padding: EdgeInsets.all(AppTheme.spacingSmall),
       width: double.infinity,
@@ -231,9 +232,9 @@ class InteractivePane extends StatelessWidget {
         border: Border.all(color: AppTheme.gray200),
       ),
       child: Text(
-        'Connected with room ${locationProvider.currentRoomId ?? "N/A"}\n'
-        'You: ${locationProvider.currentUserId ?? "N/A"}\n'
-        'Friends: ${locationProvider.roomUsers.length} online • ${locationProvider.connectionStatusMessage ?? "Connected"}',
+        'Connected with room ${connectionProvider.currentRoomId ?? "N/A"}\n'
+        'You: ${connectionProvider.currentUserId ?? "N/A"}\n'
+        'Friends: ${connectionProvider.roomUsers.length} online • ${connectionProvider.connectionStatusMessage ?? "Connected"}',
         style: TextStyle(
           fontSize: 12,
           color: AppTheme.successGreen,
@@ -246,9 +247,9 @@ class InteractivePane extends StatelessWidget {
   }
 
   Widget _buildLocationSenderSection(BuildContext context) {
-    return Consumer<LocationProvider>(
-      builder: (context, locationProvider, _) {
-        final isConnected = locationProvider.isConnected;
+    return Consumer<ConnectionProvider>(
+      builder: (context, connectionProvider, _) {
+        final isConnected = connectionProvider.isConnected;
         final hasLocation = currentLocation != null;
 
         return SingleChildScrollView(
@@ -322,10 +323,10 @@ class InteractivePane extends StatelessWidget {
   }
 
   Widget _buildRoutesSection(BuildContext context) {
-    return Consumer2<LocationProvider, RouteProvider>(
-      builder: (context, locationProvider, routeProvider, _) {
+    return Consumer3<ConnectionProvider, LocationProvider, RouteProvider>(
+      builder: (context, connectionProvider, locationProvider, routeProvider, _) {
         final userLocations = locationProvider.userLocations;
-        final currentUserId = locationProvider.currentUserId;
+        final currentUserId = connectionProvider.currentUserId;
 
         final otherUsers =
             userLocations.entries.where((e) => e.key != currentUserId).toList();
