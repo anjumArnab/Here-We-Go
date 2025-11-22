@@ -18,9 +18,15 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Store room data and user locations
+// Store room data, user locations, and chat messages
 const rooms = new Map();
 const userLocations = new Map();
+const roomMessages = new Map();
+
+// Generate unique message ID
+function generateMessageId() {
+  return `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
 
 // Basic route to check server status
 app.get('/', (req, res) => {
@@ -36,7 +42,7 @@ app.get('/', (req, res) => {
 app.get('/room/:roomId', (req, res) => {
   const { roomId } = req.params;
   const room = rooms.get(roomId);
-  
+
   if (!room) {
     return res.json({
       exists: false,
@@ -44,7 +50,7 @@ app.get('/room/:roomId', (req, res) => {
       message: 'Room not found'
     });
   }
-  
+
   res.json({
     exists: true,
     users: Array.from(room.users.keys()),
@@ -56,23 +62,23 @@ app.get('/room/:roomId', (req, res) => {
 // Socket.io connection handling
 io.on('connection', (socket) => {
   console.log(`New client connected: ${socket.id}`);
-  
+
   // Handle user joining a room
   socket.on('join-room', (data) => {
     const { roomId, userId } = data;
-    
+
     console.log(`User ${userId} joining room ${roomId}`);
-    
+
     // Leave any previous room
     socket.rooms.forEach(room => {
       if (room !== socket.id) {
         socket.leave(room);
       }
     });
-    
+
     // Join the new room
     socket.join(roomId);
-    
+
     // Initialize room if it doesn't exist
     if (!rooms.has(roomId)) {
       rooms.set(roomId, {
@@ -80,9 +86,14 @@ io.on('connection', (socket) => {
         createdAt: new Date().toISOString()
       });
     }
-    
+
+    // Initialize chat messages for room if doesn't exist
+    if (!roomMessages.has(roomId)) {
+      roomMessages.set(roomId, []);
+    }
+
     const room = rooms.get(roomId);
-    
+
     // Add user to room
     room.users.set(userId, {
       socketId: socket.id,
@@ -90,11 +101,11 @@ io.on('connection', (socket) => {
       longitude: null,
       lastUpdate: null
     });
-    
+
     // Store user info in socket for cleanup
     socket.userId = userId;
     socket.roomId = roomId;
-    
+
     // Send confirmation to the user
     socket.emit('joined-room', {
       success: true,
@@ -103,14 +114,14 @@ io.on('connection', (socket) => {
       message: `Successfully joined room ${roomId}`,
       usersInRoom: Array.from(room.users.keys())
     });
-    
+
     // Notify other users in the room
     socket.to(roomId).emit('user-joined', {
       userId,
       message: `${userId} joined the room`,
       usersInRoom: Array.from(room.users.keys())
     });
-    
+
     // Send existing locations to the new user
     const existingLocations = {};
     room.users.forEach((userData, user) => {
@@ -122,20 +133,26 @@ io.on('connection', (socket) => {
         };
       }
     });
-    
+
     if (Object.keys(existingLocations).length > 0) {
       socket.emit('existing-locations', existingLocations);
     }
-    
+
+    // Send existing chat history to the new user
+    const chatHistory = roomMessages.get(roomId) || [];
+    if (chatHistory.length > 0) {
+      socket.emit('chat-history', { messages: chatHistory });
+    }
+
     console.log(`Room ${roomId} now has ${room.users.size} users`);
   });
-  
+
   // Handle location sharing
   socket.on('share-location', (data) => {
     const { roomId, userId, latitude, longitude } = data;
-    
+
     console.log(`Location update from ${userId} in room ${roomId}: ${latitude}, ${longitude}`);
-    
+
     const room = rooms.get(roomId);
     if (!room || !room.users.has(userId)) {
       socket.emit('error', {
@@ -143,13 +160,13 @@ io.on('connection', (socket) => {
       });
       return;
     }
-    
+
     // Update user location
     const userData = room.users.get(userId);
     userData.latitude = latitude;
     userData.longitude = longitude;
     userData.lastUpdate = new Date().toISOString();
-    
+
     // Broadcast location to all other users in the room
     socket.to(roomId).emit('location-update', {
       userId,
@@ -157,21 +174,21 @@ io.on('connection', (socket) => {
       longitude,
       timestamp: userData.lastUpdate
     });
-    
+
     // Send confirmation to sender
     socket.emit('location-shared', {
       success: true,
       message: 'Location shared successfully',
       timestamp: userData.lastUpdate
     });
-    
+
     console.log(`Location broadcasted to room ${roomId}`);
   });
-  
+
   // Handle getting all locations in room
   socket.on('get-all-locations', (data) => {
     const { roomId } = data;
-    
+
     const room = rooms.get(roomId);
     if (!room) {
       socket.emit('error', {
@@ -179,7 +196,7 @@ io.on('connection', (socket) => {
       });
       return;
     }
-    
+
     const allLocations = {};
     room.users.forEach((userData, userId) => {
       if (userData.latitude && userData.longitude) {
@@ -190,41 +207,92 @@ io.on('connection', (socket) => {
         };
       }
     });
-    
+
     socket.emit('all-locations', allLocations);
   });
-  
+
+  // Handle sending a chat message
+  socket.on('send-message', (data) => {
+    const { roomId, userId, message } = data;
+
+    console.log(`Chat message from ${userId} in room ${roomId}: ${message}`);
+
+    const room = rooms.get(roomId);
+    if (!room || !room.users.has(userId)) {
+      socket.emit('error', {
+        message: 'User not found in room or room does not exist'
+      });
+      return;
+    }
+
+    // Create message object
+    const chatMessage = {
+      messageId: generateMessageId(),
+      userId,
+      message,
+      timestamp: new Date().toISOString()
+    };
+
+    // Store message in room history
+    if (!roomMessages.has(roomId)) {
+      roomMessages.set(roomId, []);
+    }
+    roomMessages.get(roomId).push(chatMessage);
+
+    // Broadcast message to all users in the room (including sender)
+    io.to(roomId).emit('new-message', chatMessage);
+
+    console.log(`Chat message broadcasted to room ${roomId}`);
+  });
+
+  // Handle request for chat history
+  socket.on('get-chat-history', (data) => {
+    const { roomId } = data;
+
+    const room = rooms.get(roomId);
+    if (!room) {
+      socket.emit('error', {
+        message: 'Room not found'
+      });
+      return;
+    }
+
+    const chatHistory = roomMessages.get(roomId) || [];
+    socket.emit('chat-history', { messages: chatHistory });
+  });
+
   // Handle user leaving room
   socket.on('leave-room', () => {
     handleUserDisconnection(socket);
   });
-  
+
   // Handle disconnection
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
     handleUserDisconnection(socket);
   });
-  
+
   // Function to handle user disconnection cleanup
   function handleUserDisconnection(socket) {
     if (socket.userId && socket.roomId) {
       const room = rooms.get(socket.roomId);
       if (room && room.users.has(socket.userId)) {
         room.users.delete(socket.userId);
-        
+
         // Notify other users
         socket.to(socket.roomId).emit('user-left', {
           userId: socket.userId,
           message: `${socket.userId} left the room`,
           usersInRoom: Array.from(room.users.keys())
         });
-        
-        // Clean up empty rooms
+
+        // Clean up empty rooms (including chat history)
         if (room.users.size === 0) {
           rooms.delete(socket.roomId);
-          console.log(`Room ${socket.roomId} deleted (empty)`);
+          roomMessages.delete(socket.roomId);
+          console.log(`Room ${socket.roomId} deleted (empty) - chat history cleared`);
         }
-        
+
         console.log(`User ${socket.userId} left room ${socket.roomId}`);
       }
     }
