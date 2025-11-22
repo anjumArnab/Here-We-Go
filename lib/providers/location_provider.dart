@@ -1,76 +1,41 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../services/location_service.dart';
-import '../models/connection_status.dart';
 import '../models/user_location.dart';
 
 class LocationProvider extends ChangeNotifier {
   final LocationService _locationService = LocationService();
 
   // Stream subscriptions
-  StreamSubscription<ConnectionStatus>? _connectionSubscription;
   StreamSubscription<Map<String, UserLocation>>? _allLocationsSubscription;
   StreamSubscription<UserLocation>? _locationUpdateSubscription;
-  StreamSubscription<List<String>>? _roomUsersSubscription;
   StreamSubscription<String>? _errorSubscription;
 
   // State
-  bool _isConnected = false;
-  String? _currentUserId;
-  String? _currentRoomId;
   Map<String, UserLocation> _userLocations = {};
-  List<String> _roomUsers = [];
   String? _lastError;
   UserLocation? _lastLocationUpdate;
-  bool _isConnecting = false;
-  String? _lastConnectionMessage;
+  bool _isInitialized = false;
 
   // Getters
-  bool get isConnected => _isConnected;
-  String? get currentUserId => _currentUserId;
-  String? get currentRoomId => _currentRoomId;
-  Map<String, UserLocation> get userLocations =>
-      Map.unmodifiable(_userLocations);
-  List<String> get roomUsers => List.unmodifiable(_roomUsers);
+  Map<String, UserLocation> get userLocations => Map.unmodifiable(_userLocations);
   String? get lastError => _lastError;
   UserLocation? get lastLocationUpdate => _lastLocationUpdate;
-  bool get isConnecting => _isConnecting;
-  String? get serverUrl => _locationService.serverUrl;
-  String? get connectionStatusMessage => _lastConnectionMessage;
+  bool get isInitialized => _isInitialized;
 
   LocationProvider() {
     _setupListeners();
-    _checkInitialState();
   }
 
   void _setupListeners() {
-    _connectionSubscription = _locationService.connectionStream.listen((
-      status,
-    ) {
-      _isConnected = status.isConnected;
-      _currentUserId = status.userId;
-      _currentRoomId = status.roomId;
-      _roomUsers = status.roomUsers;
-      _lastConnectionMessage = status.message;
-      notifyListeners();
-    });
-
-    _allLocationsSubscription = _locationService.allLocationsStream.listen((
-      locations,
-    ) {
+    _allLocationsSubscription = _locationService.allLocationsStream.listen((locations) {
       _userLocations = locations;
       notifyListeners();
     });
 
-    _locationUpdateSubscription = _locationService.locationUpdateStream.listen((
-      location,
-    ) {
+    _locationUpdateSubscription = _locationService.locationUpdateStream.listen((location) {
       _lastLocationUpdate = location;
-      notifyListeners();
-    });
-
-    _roomUsersSubscription = _locationService.roomUsersStream.listen((users) {
-      _roomUsers = users;
       notifyListeners();
     });
 
@@ -80,35 +45,23 @@ class LocationProvider extends ChangeNotifier {
     });
   }
 
-  void _checkInitialState() {
-    _isConnected = _locationService.isConnected;
-    _currentUserId = _locationService.currentUserId;
-    _currentRoomId = _locationService.currentRoomId;
-    _roomUsers = _locationService.roomUsers;
-    _userLocations = _locationService.userLocations;
-  }
-
-  Future<bool> connectToServer({
-    required String serverUrl,
+  // Initialize with socket from ConnectionProvider
+  void initialize({
+    required IO.Socket socket,
     required String roomId,
     required String userId,
-  }) async {
-    _isConnecting = true;
-    _lastError = null;
-    notifyListeners();
-
-    final success = await _locationService.connectToServer(
-      serverUrl: serverUrl,
+  }) {
+    _locationService.initialize(
+      socket: socket,
       roomId: roomId,
       userId: userId,
     );
-
-    _isConnecting = false;
+    _isInitialized = true;
+    _userLocations = _locationService.userLocations;
     notifyListeners();
-
-    return success;
   }
 
+  // Share location
   Future<bool> shareLocation({
     required double latitude,
     required double longitude,
@@ -120,38 +73,45 @@ class LocationProvider extends ChangeNotifier {
     return success;
   }
 
+  // Request all locations
   Future<void> requestAllLocations() async {
     await _locationService.requestAllLocations();
   }
 
-  Future<void> leaveRoom() async {
-    await _locationService.leaveRoom();
-    notifyListeners();
-  }
-
-  Future<void> disconnect() async {
-    await _locationService.disconnect();
-    notifyListeners();
-  }
-
+  // Get specific user location
   UserLocation? getUserLocation(String userId) {
     return _locationService.getUserLocation(userId);
   }
 
+  // Get current user's location
   UserLocation? getMyLocation() {
     return _locationService.getMyLocation();
   }
 
+  // Clear locations
   void clearLocations() {
     _locationService.clearLocations();
+    _userLocations = {};
     notifyListeners();
   }
 
+  // Reset provider
+  void reset() {
+    _locationService.reset();
+    _userLocations = {};
+    _isInitialized = false;
+    _lastError = null;
+    _lastLocationUpdate = null;
+    notifyListeners();
+  }
+
+  // Clear error
   void clearLastError() {
     _lastError = null;
     notifyListeners();
   }
 
+  // Clear last location update
   void clearLastLocationUpdate() {
     _lastLocationUpdate = null;
     notifyListeners();
@@ -159,10 +119,8 @@ class LocationProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _connectionSubscription?.cancel();
     _allLocationsSubscription?.cancel();
     _locationUpdateSubscription?.cancel();
-    _roomUsersSubscription?.cancel();
     _errorSubscription?.cancel();
     _locationService.dispose();
     super.dispose();
