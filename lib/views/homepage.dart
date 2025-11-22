@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:herewego/models/map_marker_data.dart';
 import 'package:provider/provider.dart';
+import '../models/map_marker_data.dart';
+import '../providers/chat_provider.dart';
+import '../providers/connection_provider.dart';
+import '../views/chat_page.dart';
 import '../widgets/app_snack_bar.dart';
 import '../app_theme.dart';
 import '../views/map_webview.dart';
@@ -48,15 +51,69 @@ class _HomepageState extends State<Homepage> {
   }
 
   Future<void> _initializeApp() async {
-    final locationProvider = context.read<LocationProvider>();
+    final connectionProvider = context.read<ConnectionProvider>();
 
     // Get current location
     await _getCurrentLocation();
 
     // Check if already connected
-    if (locationProvider.isConnected) {
-      locationProvider.requestAllLocations();
+    if (connectionProvider.isConnected) {
+      context.read<LocationProvider>().requestAllLocations();
     }
+  }
+
+  Future<void> _handleConnect() async {
+    final connectionProvider = context.read<ConnectionProvider>();
+    final locationProvider = context.read<LocationProvider>();
+    final chatProvider = context.read<ChatProvider>();
+
+    if (_serverUrlController.text.isEmpty ||
+        _roomIdController.text.isEmpty ||
+        _userIdController.text.isEmpty) {
+      AppSnackBar.showWarning(context, 'Please fill all fields');
+      return;
+    }
+
+    final success = await connectionProvider.connectToServer(
+      serverUrl: _serverUrlController.text.trim(),
+      roomId: _roomIdController.text.trim(),
+      userId: _userIdController.text.trim(),
+    );
+
+    if (mounted && success) {
+      // Get socket from ConnectionProvider
+      final socket = connectionProvider.socket;
+      if (socket != null) {
+        // Initialize LocationProvider
+        locationProvider.initialize(
+          socket: socket,
+          roomId: _roomIdController.text.trim(),
+          userId: _userIdController.text.trim(),
+        );
+
+        // Initialize ChatProvider
+        chatProvider.initialize(
+          socket: socket,
+          roomId: _roomIdController.text.trim(),
+          userId: _userIdController.text.trim(),
+        );
+      }
+      AppSnackBar.showSuccess(context, 'Connected successfully!');
+    }
+  }
+
+  Future<void> _handleDisconnect() async {
+    final connectionProvider = context.read<ConnectionProvider>();
+    final locationProvider = context.read<LocationProvider>();
+    final chatProvider = context.read<ChatProvider>();
+
+    await connectionProvider.disconnect();
+    locationProvider.reset();
+    chatProvider.reset();
+
+    setState(() {
+      _hasInitializedMap = false;
+    });
   }
 
   Future<void> _getCurrentLocation() async {
@@ -79,11 +136,12 @@ class _HomepageState extends State<Homepage> {
   void _updateUserMarkers() {
     final userLocationProvider = context.read<UserLocationProvider>();
     final locationProvider = context.read<LocationProvider>();
+    final connectionProvider = context.read<ConnectionProvider>();
 
     try {
       final markers = userLocationProvider.generateUserMarkerData(
         userLocations: locationProvider.userLocations,
-        currentUserId: locationProvider.currentUserId,
+        currentUserId: connectionProvider.currentUserId,
       );
 
       // Create index map for marker clicks
@@ -97,7 +155,7 @@ class _HomepageState extends State<Homepage> {
 
       // Add mappings for other user markers
       locationProvider.userLocations.forEach((userId, userLocation) {
-        if (userId != locationProvider.currentUserId) {
+        if (userId != connectionProvider.currentUserId) {
           indexMap[markerIndex] = MapEntry(userId, userLocation);
           markerIndex++;
         }
@@ -127,6 +185,7 @@ class _HomepageState extends State<Homepage> {
     final userLocationProvider = context.read<UserLocationProvider>();
     final locationProvider = context.read<LocationProvider>();
     final routeProvider = context.read<RouteProvider>();
+    final connectionProvider = context.read<ConnectionProvider>();
 
     if (!_showRoutes ||
         userLocationProvider.currentLocation == null ||
@@ -141,7 +200,7 @@ class _HomepageState extends State<Homepage> {
     await routeProvider.generateRoutes(
       currentLocation: userLocationProvider.currentLocation!,
       userLocations: locationProvider.userLocations,
-      currentUserId: locationProvider.currentUserId,
+      currentUserId: connectionProvider.currentUserId,
     );
 
     if (mounted) {
@@ -352,11 +411,12 @@ class _HomepageState extends State<Homepage> {
   }
 
   void _refreshData() async {
+    final connectionProvider = context.read<ConnectionProvider>();
     final locationProvider = context.read<LocationProvider>();
 
     await _getCurrentLocation();
 
-    if (locationProvider.isConnected) {
+    if (connectionProvider.isConnected) {
       locationProvider.requestAllLocations();
     }
   }
@@ -381,40 +441,6 @@ class _HomepageState extends State<Homepage> {
         AppSnackBar.showInfo(context, 'Your Current Location');
       }
     }
-  }
-
-  // InteractivePane handlers
-  Future<void> _handleConnect() async {
-    final locationProvider = context.read<LocationProvider>();
-
-    if (_serverUrlController.text.isEmpty ||
-        _roomIdController.text.isEmpty ||
-        _userIdController.text.isEmpty) {
-      AppSnackBar.showWarning(context, 'Please fill all fields');
-      return;
-    }
-
-    final success = await locationProvider.connectToServer(
-      serverUrl: _serverUrlController.text.trim(),
-      roomId: _roomIdController.text.trim(),
-      userId: _userIdController.text.trim(),
-    );
-
-    if (mounted) {
-      if (success) {
-        AppSnackBar.showSuccess(context, 'Connected successfully!');
-      }
-    }
-  }
-
-  Future<void> _handleDisconnect() async {
-    final locationProvider = context.read<LocationProvider>();
-    await locationProvider.disconnect();
-
-    // Reset zoom flag when disconnecting
-    setState(() {
-      _hasInitializedMap = false;
-    });
   }
 
   Future<void> _handleSendLocation() async {
@@ -485,6 +511,46 @@ class _HomepageState extends State<Homepage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          // Chat button with badge
+          Consumer2<ConnectionProvider, ChatProvider>(
+            builder: (context, connectionProvider, chatProvider, _) {
+              return Container(
+                margin: EdgeInsets.only(right: AppTheme.spacingSmall),
+                decoration: BoxDecoration(
+                  color: AppTheme.cardWhite,
+                  shape: BoxShape.circle,
+                  boxShadow: [AppTheme.lightShadow],
+                ),
+                child: Badge(
+                  isLabelVisible: chatProvider.unreadCount > 0,
+                  label: Text('${chatProvider.unreadCount}'),
+                  child: IconButton(
+                    onPressed:
+                        connectionProvider.isConnected
+                            ? () {
+                              chatProvider.clearUnreadCount();
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ChatPage(),
+                                ),
+                              );
+                            }
+                            : null,
+                    icon: Icon(
+                      Icons.chat_bubble_outline,
+                      color:
+                          connectionProvider.isConnected
+                              ? AppTheme.textDark
+                              : AppTheme.gray300,
+                    ),
+                    tooltip: 'Chat',
+                  ),
+                ),
+              );
+            },
+          ),
+          // Route toggle button
           Consumer<LocationProvider>(
             builder: (context, locationProvider, _) {
               final hasUsers = locationProvider.userLocations.isNotEmpty;
@@ -509,21 +575,28 @@ class _HomepageState extends State<Homepage> {
           ),
         ],
       ),
-      body: Consumer2<UserLocationProvider, LocationProvider>(
-        builder: (context, userLocationProvider, locationProvider, _) {
+      body: Consumer3<
+        UserLocationProvider,
+        LocationProvider,
+        ConnectionProvider
+      >(
+        builder: (
+          context,
+          userLocationProvider,
+          locationProvider,
+          connectionProvider,
+          _,
+        ) {
           // Show errors if any
           WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (connectionProvider.lastError != null) {
+              AppSnackBar.showError(context, connectionProvider.lastError!);
+              connectionProvider.clearLastError();
+            }
+
             if (locationProvider.lastError != null) {
               AppSnackBar.showError(context, locationProvider.lastError!);
               locationProvider.clearLastError();
-            }
-
-            if (locationProvider.lastLocationUpdate != null) {
-              AppSnackBar.showLocationUpdate(
-                context,
-                locationProvider.lastLocationUpdate!.userId,
-              );
-              locationProvider.clearLastLocationUpdate();
             }
           });
 
@@ -643,8 +716,9 @@ class _HomepageState extends State<Homepage> {
       floatingActionButton:
           _isExpanded
               ? null
-              : Consumer<LocationProvider>(
-                builder: (context, locationProvider, _) {
+              : Consumer<ConnectionProvider>(
+                builder: (context, connectionProvider, _) {
+                  final locationProvider = context.read<LocationProvider>();
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -653,7 +727,6 @@ class _HomepageState extends State<Homepage> {
                           mini: true,
                           shape: const CircleBorder(),
                           onPressed: () {
-                            // Mark as initialized to prevent auto-zoom on next update
                             _hasInitializedMap = true;
                             _showAllLocations();
                           },
