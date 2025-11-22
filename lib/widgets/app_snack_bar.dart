@@ -33,21 +33,13 @@ class AppSnackBar {
     showSnackBar(
       context,
       backgroundColor: AppTheme.successGreen,
-      content: Row(
-        children: [
-          const Icon(Icons.check_circle, color: Colors.white, size: 20),
-          const SizedBox(width: AppTheme.spacingSmall),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
+      content: Text(
+        message,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
@@ -57,21 +49,13 @@ class AppSnackBar {
     showSnackBar(
       context,
       backgroundColor: AppTheme.errorRed,
-      content: Row(
-        children: [
-          const Icon(Icons.error, color: Colors.white, size: 20),
-          const SizedBox(width: AppTheme.spacingSmall),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
+      content: Text(
+        message,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
       ),
       duration: const Duration(seconds: 4),
     );
@@ -82,21 +66,13 @@ class AppSnackBar {
     showSnackBar(
       context,
       backgroundColor: AppTheme.infoBlue,
-      content: Row(
-        children: [
-          const Icon(Icons.info, color: Colors.white, size: 20),
-          const SizedBox(width: AppTheme.spacingSmall),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
+      content: Text(
+        message,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
@@ -106,21 +82,13 @@ class AppSnackBar {
     showSnackBar(
       context,
       backgroundColor: AppTheme.warningOrange,
-      content: Row(
-        children: [
-          const Icon(Icons.warning, color: Colors.white, size: 20),
-          const SizedBox(width: AppTheme.spacingSmall),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
+      content: Text(
+        message,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
@@ -139,42 +107,33 @@ class AppSnackBar {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Text(
+            'Location sent successfully!',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: AppTheme.spacingXSmall),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.check_circle, color: Colors.white, size: 20),
-              const SizedBox(width: AppTheme.spacingSmall),
-              const Text(
-                'Location sent successfully!',
+              Text(
+                'Lat: ${lat.toStringAsFixed(6)}, Lng: ${lng.toStringAsFixed(6)}',
                 style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  color: Colors.white,
+                  fontSize: 12,
+                  color: Colors.white.withOpacity(0.9),
+                ),
+              ),
+              Text(
+                'Shared with $sharedCount other user${sharedCount == 1 ? '' : 's'}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withOpacity(0.9),
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: AppTheme.spacingXSmall),
-          Padding(
-            padding: const EdgeInsets.only(left: 28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Lat: ${lat.toStringAsFixed(6)}, Lng: ${lng.toStringAsFixed(6)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                ),
-                Text(
-                  'Shared with $sharedCount other user${sharedCount == 1 ? '' : 's'}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -187,28 +146,13 @@ class AppSnackBar {
     showSnackBar(
       context,
       backgroundColor: AppTheme.infoBlue,
-      content: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AppTheme.spacingSmall),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-            ),
-            child: const Icon(Icons.my_location, color: Colors.white, size: 18),
-          ),
-          const SizedBox(width: AppTheme.spacingSmall),
-          Expanded(
-            child: Text(
-              '$userId updated their location',
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
+      content: Text(
+        '$userId updated their location',
+        style: const TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 14,
+          color: Colors.white,
+        ),
       ),
       duration: const Duration(seconds: 2),
     );
