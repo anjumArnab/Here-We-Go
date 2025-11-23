@@ -3,11 +3,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:herewego/models/map_marker_data.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/location_result.dart';
 import '../models/user_location.dart';
+import '../models/map_marker_data.dart';
 
 class UserLocationHandler {
   // Default location (Dhaka, Bangladesh)

@@ -2,7 +2,7 @@
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:herewego/models/map_marker_data.dart';
+import '../models/map_marker_data.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -383,7 +383,7 @@ class _MapWebViewState extends State<MapWebView> {
       });
       marker = L.marker([lat, lng], { icon: currentIcon });
     } else if (type === 'user') {
-      // User location marker - location pin with user ID (smaller, no border)
+      // User location marker - location pin with user ID
       var displayUserId = userId || 'User';
       var userIcon = L.divIcon({
         className: 'custom-user-marker',

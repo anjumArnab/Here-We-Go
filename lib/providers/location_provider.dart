@@ -23,7 +23,7 @@ class LocationProvider extends ChangeNotifier {
   String? get lastError => _lastError;
   UserLocation? get lastLocationUpdate => _lastLocationUpdate;
   bool get isInitialized => _isInitialized;
-
+  
   LocationProvider() {
     _setupListeners();
   }

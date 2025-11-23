@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:herewego/models/connection_status.dart';
-import 'package:herewego/services/connection_service.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import '../models/connection_status.dart';
+import '../services/connection_service.dart';
 
 class ConnectionProvider extends ChangeNotifier {
   final ConnectionService _connectionService = ConnectionService();

@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:herewego/models/map_marker_data.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/user_location_handler.dart';
 import '../models/location_result.dart';
 import '../models/user_location.dart';
+import '../models/map_marker_data.dart';
 
 class UserLocationProvider extends ChangeNotifier {
   final UserLocationHandler _userLocationHandler = UserLocationHandler();
