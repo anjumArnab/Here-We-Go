@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../models/chat_message.dart';
+import 'notification_service.dart';
 
 class ChatService {
   // Singleton instance
@@ -11,6 +12,9 @@ class ChatService {
 
   // Socket reference
   IO.Socket? _socket;
+
+  // Notification service reference
+  final NotificationService _notificationService = NotificationService();
 
   // Chat state
   String? _currentRoomId;
@@ -30,8 +34,7 @@ class ChatService {
 
   // Getters for streams
   Stream<ChatMessage> get newMessageStream => _newMessageController.stream;
-  Stream<List<ChatMessage>> get allMessagesStream =>
-      _allMessagesController.stream;
+  Stream<List<ChatMessage>> get allMessagesStream => _allMessagesController.stream;
   Stream<int> get unreadCountStream => _unreadCountController.stream;
   Stream<String> get errorStream => _errorController.stream;
 
@@ -78,10 +81,17 @@ class ChatService {
     _newMessageController.add(message);
     _allMessagesController.add(List.from(_messages));
 
-    // Increment unread count for messages from others
+    // Increment unread count and show notification for messages from others
     if (message.userId != _currentUserId) {
       _unreadCount++;
       _unreadCountController.add(_unreadCount);
+
+      // Show notification if app is in background
+      _notificationService.showMessageNotification(
+        senderId: message.userId,
+        message: message.message,
+        roomId: _currentRoomId,
+      );
     }
   }
 
