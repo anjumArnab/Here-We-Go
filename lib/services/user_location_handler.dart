@@ -2,7 +2,6 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/location_result.dart';
@@ -31,10 +30,15 @@ class UserLocationHandler {
   LatLng? _currentLocation;
   bool _isLoadingLocation = false;
 
+  // Continuous tracking state
+  StreamSubscription<Position>? _positionStreamSubscription;
+  StreamController<LatLng>? _locationStreamController;
+
   // Getters
   LatLng? get currentLocation => _currentLocation;
   bool get isLoadingLocation => _isLoadingLocation;
   List<Color> get markerColors => List.from(_markerColors);
+  bool get isTracking => _positionStreamSubscription != null;
 
   /// Get current user location with proper error handling
   Future<LocationResult> getCurrentLocation() async {
@@ -45,13 +49,10 @@ class UserLocationHandler {
       LocationPermission permission = await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied) {
-        debugPrint('Location permission denied, requesting...');
-
         // Show the system permission dialog to request location access
         permission = await Geolocator.requestPermission();
 
         if (permission == LocationPermission.denied) {
-          debugPrint('Location permissions are denied by user');
           _currentLocation = defaultLocation;
           _isLoadingLocation = false;
           return LocationResult.error(
@@ -62,7 +63,6 @@ class UserLocationHandler {
       }
 
       if (permission == LocationPermission.deniedForever) {
-        debugPrint('Location permissions are permanently denied.');
         _currentLocation = defaultLocation;
         _isLoadingLocation = false;
         return LocationResult.error(
@@ -74,8 +74,6 @@ class UserLocationHandler {
       // Check if location services are enabled on the device
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        debugPrint('Location services are disabled.');
-
         // Try to open location settings
         bool opened = await Geolocator.openLocationSettings();
 
@@ -105,14 +103,8 @@ class UserLocationHandler {
 
       _currentLocation = LatLng(position.latitude, position.longitude);
       _isLoadingLocation = false;
-
-      debugPrint(
-        'Current location obtained: ${_currentLocation!.latitude}, ${_currentLocation!.longitude}',
-      );
-
       return LocationResult.success(_currentLocation!);
     } catch (e) {
-      debugPrint('Error getting current location: $e');
       _currentLocation = defaultLocation;
       _isLoadingLocation = false;
       return LocationResult.error(
@@ -120,6 +112,66 @@ class UserLocationHandler {
         defaultLocation,
       );
     }
+  }
+
+  /// Returns a stream that emits location updates
+  Stream<LatLng> startContinuousTracking({
+    Duration interval = const Duration(seconds: 5),
+    double distanceFilter = 10.0, // meters
+  }) {
+    // Stop any existing tracking
+    stopContinuousTracking();
+
+    // Create location stream controller
+    _locationStreamController = StreamController<LatLng>.broadcast();
+
+    // Configure location settings for navigation
+    const locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 5,
+    );
+
+    // Start listening to position stream
+    _positionStreamSubscription = Geolocator.getPositionStream(
+      locationSettings: locationSettings,
+    ).listen(
+      (Position position) {
+        _currentLocation = LatLng(position.latitude, position.longitude);
+
+        // Emit location update
+        if (!_locationStreamController!.isClosed) {
+          _locationStreamController!.add(_currentLocation!);
+        }
+      },
+      onError: (error) {
+        if (!_locationStreamController!.isClosed) {
+          _locationStreamController!.addError(error);
+        }
+      },
+    );
+
+    return _locationStreamController!.stream;
+  }
+
+  /// Stop continuous location tracking
+  void stopContinuousTracking() {
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
+
+    _locationStreamController?.close();
+    _locationStreamController = null;
+  }
+
+  /// Check if location permissions are granted
+  Future<bool> hasLocationPermission() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    return permission == LocationPermission.always ||
+        permission == LocationPermission.whileInUse;
+  }
+
+  /// Check if location services are enabled
+  Future<bool> isLocationServiceEnabled() async {
+    return await Geolocator.isLocationServiceEnabled();
   }
 
   /// Set default location when location access fails
@@ -163,7 +215,7 @@ class UserLocationHandler {
       String userId = entry.key;
       UserLocation userLocation = entry.value;
 
-      // Skip if this is the current user (already have current location marker)
+      // Skip if this is the current user
       if (userId == currentUserId) {
         colorIndex++;
         continue;
@@ -183,55 +235,6 @@ class UserLocationHandler {
     }
 
     return markers;
-  }
-
-  /// Calculate bounds to show all locations on the map
-  LatLngBounds? calculateBoundsForAllLocations({
-    required Map<String, UserLocation> userLocations,
-  }) {
-    // Collect all locations
-    List<LatLng> allLocations = [];
-
-    // Add current location
-    if (_currentLocation != null) {
-      allLocations.add(_currentLocation!);
-    }
-
-    // Add user locations
-    for (var userLocation in userLocations.values) {
-      allLocations.add(LatLng(userLocation.latitude, userLocation.longitude));
-    }
-
-    if (allLocations.length < 2) {
-      return null; // Not enough points for bounds
-    }
-
-    // Calculate bounds
-    double minLat = allLocations
-        .map((loc) => loc.latitude)
-        .reduce((a, b) => a < b ? a : b);
-    double maxLat = allLocations
-        .map((loc) => loc.latitude)
-        .reduce((a, b) => a > b ? a : b);
-    double minLng = allLocations
-        .map((loc) => loc.longitude)
-        .reduce((a, b) => a < b ? a : b);
-    double maxLng = allLocations
-        .map((loc) => loc.longitude)
-        .reduce((a, b) => a > b ? a : b);
-
-    // Add padding
-    double latPadding = (maxLat - minLat) * 0.1;
-    double lngPadding = (maxLng - minLng) * 0.1;
-
-    // Ensure minimum padding
-    latPadding = latPadding < 0.005 ? 0.005 : latPadding;
-    lngPadding = lngPadding < 0.005 ? 0.005 : lngPadding;
-
-    return LatLngBounds(
-      LatLng(minLat - latPadding, minLng - lngPadding),
-      LatLng(maxLat + latPadding, maxLng + lngPadding),
-    );
   }
 
   /// Get coordinates to focus on a specific user
@@ -267,6 +270,7 @@ class UserLocationHandler {
 
   /// Dispose of resources
   void dispose() {
+    stopContinuousTracking();
     _currentLocation = null;
     _isLoadingLocation = false;
   }
