@@ -448,7 +448,7 @@ class _HomepageState extends State<Homepage> {
             // Update markers on each location update
             _updateUserMarkers();
             // Move camera to current location during navigation
-            _mapController.move(location, 16.0);
+            _mapController.move(location, 16.0, offsetY: 150);
           },
         );
 

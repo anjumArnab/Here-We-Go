@@ -446,16 +446,30 @@ class _MapWebViewState extends State<MapWebView> {
     }
 
     // Move map to location
-    function moveMap(lat, lng, zoom) {
-      try {
-        map.setView([lat, lng], zoom, {
-          animate: true,
-          duration: 0.5
-        });
-      } catch (error) {
-        console.error('Error moving map:', error);
-      }
+    function moveMap(lat, lng, zoom, offsetY = 0) {
+  try {
+    if (offsetY !== 0) {
+      // Calculate offset position (move marker down = move map view up)
+      const point = map.latLngToContainerPoint([lat, lng]);
+      point.y -= offsetY; // Negative offset moves view up
+      const newLatLng = map.containerPointToLatLng(point);
+      
+      map.setView(newLatLng, zoom, {
+        animate: true,
+        duration: 0.5
+      });
+    } else {
+      // Normal centered view
+      map.setView([lat, lng], zoom, {
+        animate: true,
+        duration: 0.5
+      });
     }
+  } catch (error) {
+    console.error('Error moving map:', error);
+  }
+}
+
 
     // Fit bounds to show all markers and polylines
     function fitBounds() {
@@ -556,18 +570,18 @@ class MapWebViewController {
     _webViewController = controller;
   }
 
-  /// Move map to specific location with optional zoom level
-  Future<void> move(LatLng center, double zoom) async {
+  /// Move map to specific location with optional zoom level and offset
+  Future<void> move(LatLng center, double zoom, {double offsetY = 0}) async {
     if (_webViewController == null) {
       return;
     }
 
     try {
       await _webViewController!.runJavaScript('''
-        moveMap(${center.latitude}, ${center.longitude}, $zoom);
-      ''');
+      moveMap(${center.latitude}, ${center.longitude}, $zoom, $offsetY);
+    ''');
     } catch (e) {
-      //
+      debugPrint('Error moving map: $e');
     }
   }
 
