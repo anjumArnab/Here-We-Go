@@ -80,8 +80,6 @@ class RouteService {
       String url =
           "$osrmBaseUrl/$profile/$coordinates?overview=full&geometries=geojson";
 
-      debugPrint('OSRM Request URL: $url');
-
       final response = await http
           .get(Uri.parse(url), headers: {'Content-Type': 'application/json'})
           .timeout(Duration(seconds: 10));
@@ -102,21 +100,19 @@ class RouteService {
                   return LatLng(
                     coord[1].toDouble(),
                     coord[0].toDouble(),
-                  ); // Note: OSRM returns [lng, lat]
+                  ); // OSRM returns [lng, lat]
                 }).toList();
           }
         } else {
-          debugPrint('OSRM Error: ${data['message'] ?? 'No route found'}');
           // Fallback to direct line
           routeCoordinates = [origin, destination];
         }
       } else {
-        debugPrint('OSRM HTTP Error: ${response.statusCode}');
         // Fallback to direct line
         routeCoordinates = [origin, destination];
       }
     } catch (e) {
-      debugPrint('Error getting route points: $e');
+
       // Fallback to direct line
       routeCoordinates = [origin, destination];
     }
@@ -177,30 +173,79 @@ class RouteService {
         colorIndex++;
       }
     } catch (e) {
-      debugPrint('Error generating routes: $e');
       rethrow;
     }
 
     return routes;
   }
 
-  /// Calculate direct distance between two points using Haversine formula
+  /// Calculate direct distance between two points
   double calculateDistance(LatLng from, LatLng to) {
     const Distance distance = Distance();
     return distance.as(LengthUnit.Kilometer, from, to);
   }
 
-  /// Get OSRM profile based on route mode
-  String _getOSRMProfile() {
-    switch (_routeMode) {
-      case 'walking':
-        return 'foot';
-      case 'cycling':
-        return 'bicycle';
-      case 'driving':
-      default:
-        return 'driving';
+  /// Calculate distance from point to route polyline in meters
+  double distanceToRoute(LatLng point, List<LatLng> route) {
+    if (route.length < 2) return double.infinity;
+
+    double minDistance = double.infinity;
+
+    for (int i = 0; i < route.length - 1; i++) {
+      double distance = _distanceToLineSegment(point, route[i], route[i + 1]);
+      if (distance < minDistance) {
+        minDistance = distance;
+      }
     }
+
+    return minDistance;
+  }
+
+  /// Calculate distance from point to line segment in meters
+  double _distanceToLineSegment(
+    LatLng point,
+    LatLng lineStart,
+    LatLng lineEnd,
+  ) {
+    const Distance distCalc = Distance();
+
+    // Calculate distances
+    double lineLength = distCalc.as(LengthUnit.Meter, lineStart, lineEnd);
+    double distToStart = distCalc.as(LengthUnit.Meter, point, lineStart);
+
+    // If line segment has zero length
+    if (lineLength == 0) return distToStart;
+
+    // Calculate projection factor
+    double dx = lineEnd.longitude - lineStart.longitude;
+    double dy = lineEnd.latitude - lineStart.latitude;
+    double px = point.longitude - lineStart.longitude;
+    double py = point.latitude - lineStart.latitude;
+
+    double t = (px * dx + py * dy) / (dx * dx + dy * dy);
+    t = t.clamp(0.0, 1.0);
+
+    // Calculate projection point
+    LatLng projection = LatLng(
+      lineStart.latitude + t * dy,
+      lineStart.longitude + t * dx,
+    );
+
+    return distCalc.as(LengthUnit.Meter, point, projection);
+  }
+
+  /// Calculate total route distance in kilometers
+  double calculateRouteDistance(List<LatLng> route) {
+    if (route.length < 2) return 0.0;
+
+    const Distance distCalc = Distance();
+    double totalDistance = 0.0;
+
+    for (int i = 0; i < route.length - 1; i++) {
+      totalDistance += distCalc.as(LengthUnit.Meter, route[i], route[i + 1]);
+    }
+
+    return totalDistance / 1000.0;
   }
 
   /// Get route information for display
@@ -243,6 +288,19 @@ class RouteService {
       }
     } catch (e) {
       return "Unknown";
+    }
+  }
+
+  /// Get OSRM profile based on route mode
+  String _getOSRMProfile() {
+    switch (_routeMode) {
+      case 'walking':
+        return 'foot';
+      case 'cycling':
+        return 'bicycle';
+      case 'driving':
+      default:
+        return 'driving';
     }
   }
 
