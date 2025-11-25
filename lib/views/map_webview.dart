@@ -61,11 +61,8 @@ class _MapWebViewState extends State<MapWebView> {
           )
           ..setNavigationDelegate(
             NavigationDelegate(
-              onPageStarted: (String url) {
-                debugPrint('Map page started loading');
-              },
+              onPageStarted: (String url) {},
               onPageFinished: (String url) {
-                debugPrint('Map page loaded successfully');
                 setState(() {
                   _isLoading = false;
                 });
@@ -75,9 +72,7 @@ class _MapWebViewState extends State<MapWebView> {
                   _initializeMap();
                 });
               },
-              onWebResourceError: (WebResourceError error) {
-                debugPrint('Map loading error: ${error.description}');
-              },
+              onWebResourceError: (WebResourceError error) {},
             ),
           )
           ..loadHtmlString(_generateMapHtml());
@@ -87,8 +82,6 @@ class _MapWebViewState extends State<MapWebView> {
   }
 
   void _handleMessageFromJS(String message) {
-    debugPrint('Message from WebView: $message');
-
     try {
       final data = jsonDecode(message);
       final String type = data['type'];
@@ -116,19 +109,16 @@ class _MapWebViewState extends State<MapWebView> {
             final indexStr = markerId.replaceAll('marker_', '');
             final markerIndex = int.tryParse(indexStr);
             if (markerIndex != null) {
-              debugPrint('Calling onMarkerTap with index: $markerIndex');
               widget.onMarkerTap!(markerIndex);
             }
           }
           break;
         case 'mapReady':
-          debugPrint('Map is ready');
           break;
         default:
-          debugPrint('Unknown message type: $type');
       }
     } catch (e) {
-      debugPrint('Error parsing message from JS: $e');
+      //
     }
   }
 
@@ -170,8 +160,6 @@ class _MapWebViewState extends State<MapWebView> {
   void _initializeMap() {
     if (!_isMapReady) return;
 
-    debugPrint('Initializing map with center: ${widget.initialCenter}');
-
     // Set initial view
     _webViewController.runJavaScript('''
       if (map) {
@@ -188,8 +176,6 @@ class _MapWebViewState extends State<MapWebView> {
 
   void _updateMarkers() {
     if (!_isMapReady) return;
-
-    debugPrint('Updating ${widget.markers.length} markers');
 
     // Clear existing markers
     _webViewController.runJavaScript('clearMarkers();');
@@ -213,8 +199,6 @@ class _MapWebViewState extends State<MapWebView> {
 
   void _updatePolylines() {
     if (!_isMapReady) return;
-
-    debugPrint('Updating ${widget.polylines.length} polylines');
 
     // Clear existing polylines
     _webViewController.runJavaScript('clearPolylines();');
@@ -561,7 +545,6 @@ class _MapWebViewState extends State<MapWebView> {
 
   @override
   void dispose() {
-    debugPrint('Disposing MapWebView');
     super.dispose();
   }
 }
@@ -576,7 +559,6 @@ class MapWebViewController {
   /// Move map to specific location with optional zoom level
   Future<void> move(LatLng center, double zoom) async {
     if (_webViewController == null) {
-      debugPrint('WebViewController not initialized');
       return;
     }
 
@@ -585,28 +567,26 @@ class MapWebViewController {
         moveMap(${center.latitude}, ${center.longitude}, $zoom);
       ''');
     } catch (e) {
-      debugPrint('Error moving map: $e');
+      //
     }
   }
 
   /// Fit map bounds to show all markers and polylines
   Future<void> fitBounds() async {
     if (_webViewController == null) {
-      debugPrint('WebViewController not initialized');
       return;
     }
 
     try {
       await _webViewController!.runJavaScript('fitBounds();');
     } catch (e) {
-      debugPrint('Error fitting bounds: $e');
+      //
     }
   }
 
   /// Fit map bounds with custom padding
   Future<void> fitBoundsWithPadding(double padding) async {
     if (_webViewController == null) {
-      debugPrint('WebViewController not initialized');
       return;
     }
 
@@ -615,28 +595,26 @@ class MapWebViewController {
         'fitBoundsWithPadding($padding);',
       );
     } catch (e) {
-      debugPrint('Error fitting bounds with padding: $e');
+      //
     }
   }
 
   /// Set map zoom level
   Future<void> setZoom(double zoom) async {
     if (_webViewController == null) {
-      debugPrint('WebViewController not initialized');
       return;
     }
 
     try {
       await _webViewController!.runJavaScript('setZoom($zoom);');
     } catch (e) {
-      debugPrint('Error setting zoom: $e');
+      //
     }
   }
 
   /// Get current map center
   Future<LatLng?> getCenter() async {
     if (_webViewController == null) {
-      debugPrint('WebViewController not initialized');
       return null;
     }
 
@@ -644,7 +622,6 @@ class MapWebViewController {
       await _webViewController!.runJavaScript('getCenter();');
       return null;
     } catch (e) {
-      debugPrint('Error getting center: $e');
       return null;
     }
   }
@@ -652,7 +629,6 @@ class MapWebViewController {
   /// Get current map zoom level
   Future<double?> getZoom() async {
     if (_webViewController == null) {
-      debugPrint('WebViewController not initialized');
       return null;
     }
 
@@ -660,7 +636,6 @@ class MapWebViewController {
       await _webViewController!.runJavaScript('getZoom();');
       return null;
     } catch (e) {
-      debugPrint('Error getting zoom: $e');
       return null;
     }
   }
@@ -668,14 +643,13 @@ class MapWebViewController {
   /// Execute custom JavaScript code
   Future<void> runJavaScript(String code) async {
     if (_webViewController == null) {
-      debugPrint('WebViewController not initialized');
       return;
     }
 
     try {
       await _webViewController!.runJavaScript(code);
     } catch (e) {
-      debugPrint('Error running JavaScript: $e');
+      //
     }
   }
 }
