@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:herewego/widgets/app_chip_button.dart';
 import 'package:provider/provider.dart';
 import '../models/map_marker_data.dart';
 import '../providers/chat_provider.dart';
 import '../providers/connection_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../views/chat_page.dart';
 import '../widgets/app_snack_bar.dart';
+import '../widgets/navigation_metrics_panel.dart';
 import '../app_theme.dart';
 import '../views/map_webview.dart';
 import '../providers/location_provider.dart';
@@ -48,6 +51,7 @@ class _HomepageState extends State<Homepage> {
   void initState() {
     super.initState();
     _initializeApp();
+    _setupNavigationListener();
   }
 
   Future<void> _initializeApp() async {
@@ -60,6 +64,79 @@ class _HomepageState extends State<Homepage> {
     if (connectionProvider.isConnected) {
       context.read<LocationProvider>().requestAllLocations();
     }
+  }
+
+  // Setup navigation state listener
+  void _setupNavigationListener() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final navigationProvider = context.read<NavigationProvider>();
+      final locationProvider = context.read<LocationProvider>();
+
+      navigationProvider.addListener(() {
+        if (!mounted) return;
+
+        // Update routes when navigation state changes
+        if (navigationProvider.isNavigating || navigationProvider.isRerouting) {
+          _updateNavigationRoute();
+        } else if (navigationProvider.isIdle) {
+          // Navigation stopped, restore regular routes if enabled
+          if (_showRoutes) {
+            _updateRoutes();
+          } else {
+            setState(() {
+              _polylines.clear();
+            });
+          }
+        }
+
+        // Show arrival notification
+        if (navigationProvider.hasArrived) {
+          AppSnackBar.showSuccess(context, 'You have arrived at destination!');
+          navigationProvider.resetArrivalFlag();
+        }
+
+        // Show rerouting notification
+        if (navigationProvider.isRerouting) {
+          AppSnackBar.showInfo(context, 'Recalculating route...');
+        }
+      });
+
+      // Listen to location updates for destination user
+      locationProvider.addListener(() {
+        if (!mounted) return;
+
+        final navigationProvider = context.read<NavigationProvider>();
+        if (!navigationProvider.isActive) return;
+
+        // Check if destination user location updated
+        final destinationUserId = navigationProvider.destinationUserId;
+        if (destinationUserId != null) {
+          final updatedLocation = locationProvider.getUserLocation(
+            destinationUserId,
+          );
+          if (updatedLocation != null) {
+            final currentDestination = navigationProvider.destination;
+
+            // Check if destination moved more than 20 meters
+            if (currentDestination != null) {
+              final oldLat = currentDestination.latitude;
+              final oldLng = currentDestination.longitude;
+              final newLat = updatedLocation.latitude;
+              final newLng = updatedLocation.longitude;
+
+              final latDiff = (newLat - oldLat).abs();
+              final lngDiff = (newLng - oldLng).abs();
+              final moved =
+                  (latDiff > 0.0002 || lngDiff > 0.0002); // around 20 meters
+
+              if (moved) {
+                navigationProvider.updateDestination(updatedLocation);
+              }
+            }
+          }
+        }
+      });
+    });
   }
 
   Future<void> _handleConnect() async {
@@ -106,6 +183,12 @@ class _HomepageState extends State<Homepage> {
     final connectionProvider = context.read<ConnectionProvider>();
     final locationProvider = context.read<LocationProvider>();
     final chatProvider = context.read<ChatProvider>();
+    final navigationProvider = context.read<NavigationProvider>();
+
+    // Stop navigation if active
+    if (navigationProvider.isActive) {
+      await navigationProvider.stopNavigation();
+    }
 
     await connectionProvider.disconnect();
     locationProvider.reset();
@@ -148,7 +231,7 @@ class _HomepageState extends State<Homepage> {
       Map<int, MapEntry<String, UserLocation>> indexMap = {};
       int markerIndex = 0;
 
-      // First marker is current user (if location permission granted)
+      // First marker is current user if location permission is granted
       if (userLocationProvider.locationPermissionGranted) {
         markerIndex++;
       }
@@ -166,7 +249,7 @@ class _HomepageState extends State<Homepage> {
         _markerIndexMap = indexMap;
       });
 
-      // Auto zoom: Only on initial load with multiple users
+      // Only zoom on initial load
       if (!_hasInitializedMap && locationProvider.userLocations.length > 1) {
         _hasInitializedMap = true;
         Future.delayed(Duration(milliseconds: 300), () {
@@ -176,9 +259,33 @@ class _HomepageState extends State<Homepage> {
         });
       }
     } catch (e) {
-      debugPrint('Error updating user markers: $e');
       AppSnackBar.showError(context, 'Error updating markers: $e');
     }
+  }
+
+  // Update navigation route
+  Future<void> _updateNavigationRoute() async {
+    final navigationProvider = context.read<NavigationProvider>();
+
+    if (!navigationProvider.isActive) {
+      setState(() {
+        _polylines.clear();
+      });
+      return;
+    }
+
+    final navRoute = navigationProvider.currentRoute;
+    if (navRoute == null || navRoute.isEmpty) return;
+
+    setState(() {
+      _polylines = [
+        Polyline(
+          points: navRoute,
+          color: AppTheme.navigationBlue,
+          strokeWidth: 6.0,
+        ),
+      ];
+    });
   }
 
   Future<void> _updateRoutes() async {
@@ -186,6 +293,12 @@ class _HomepageState extends State<Homepage> {
     final locationProvider = context.read<LocationProvider>();
     final routeProvider = context.read<RouteProvider>();
     final connectionProvider = context.read<ConnectionProvider>();
+    final navigationProvider = context.read<NavigationProvider>();
+
+    // If navigating, do not show regular routes
+    if (navigationProvider.isActive) {
+      return;
+    }
 
     if (!_showRoutes ||
         userLocationProvider.currentLocation == null ||
@@ -222,6 +335,7 @@ class _HomepageState extends State<Homepage> {
   void _showUserInfo(String userId, UserLocation userLocation) {
     final userLocationProvider = context.read<UserLocationProvider>();
     final routeProvider = context.read<RouteProvider>();
+    final navigationProvider = context.read<NavigationProvider>();
 
     if (userLocationProvider.currentLocation == null) {
       _showUserBasicInfo(userId, userLocation);
@@ -278,23 +392,98 @@ class _HomepageState extends State<Homepage> {
                 style: TextButton.styleFrom(foregroundColor: AppTheme.textGray),
                 child: const Text('Close'),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _focusOnUser(userLocation);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryGreen,
-                  foregroundColor: AppTheme.cardWhite,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              // Navigate button
+              if (!navigationProvider.isActive)
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _startNavigation(userId, userLocation);
+                  },
+                  icon: Icon(Icons.navigation, size: 18),
+                  label: const Text('Navigate'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.navigationBlue,
+                    foregroundColor: AppTheme.cardWhite,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppTheme.radiusMedium,
+                      ),
+                    ),
                   ),
                 ),
-                child: const Text('Focus on Map'),
-              ),
             ],
           ),
     );
+  }
+
+  // Start navigation to selected user
+  Future<void> _startNavigation(String userId, UserLocation destination) async {
+    final userLocationProvider = context.read<UserLocationProvider>();
+    final navigationProvider = context.read<NavigationProvider>();
+
+    if (userLocationProvider.currentLocation == null) {
+      AppSnackBar.showError(context, 'Current location not available');
+      return;
+    }
+
+    // Check location permission
+    if (!userLocationProvider.locationPermissionGranted) {
+      AppSnackBar.showError(
+        context,
+        'Location permission required for navigation',
+      );
+      return;
+    }
+
+    final success = await navigationProvider.startNavigation(
+      destination: destination,
+      currentLocation: userLocationProvider.currentLocation!,
+      destinationUserId: userId,
+    );
+
+    if (mounted) {
+      if (success) {
+        userLocationProvider.startContinuousTracking(
+          onLocationUpdate: (location) {
+            // Update markers on each location update
+            _updateUserMarkers();
+            // Move camera to current location during navigation
+            _mapController.move(location, 16.0);
+          },
+        );
+
+        // Hide routes toggle if enabled
+        if (_showRoutes) {
+          setState(() {
+            _showRoutes = false;
+          });
+        }
+
+        // Update navigation route
+        _updateNavigationRoute();
+
+        AppSnackBar.showSuccess(context, 'Navigation started to $userId');
+      } else {
+        AppSnackBar.showError(context, 'Failed to start navigation');
+      }
+    }
+  }
+
+  // Stop navigation
+  Future<void> _stopNavigation() async {
+    final navigationProvider = context.read<NavigationProvider>();
+    final userLocationProvider = context.read<UserLocationProvider>();
+
+    await navigationProvider.stopNavigation();
+    userLocationProvider.stopContinuousTracking();
+
+    setState(() {
+      _polylines.clear();
+    });
+
+    if (mounted) {
+      AppSnackBar.showInfo(context, 'Navigation stopped');
+    }
   }
 
   void _showUserBasicInfo(String userId, UserLocation userLocation) {
@@ -313,7 +502,7 @@ class _HomepageState extends State<Homepage> {
                 Icon(Icons.person, color: AppTheme.infoBlue),
                 SizedBox(width: AppTheme.spacingSmall),
                 Text(
-                  'User: $userId',
+                  'Friend: $userId',
                   style: TextStyle(
                     color: AppTheme.textDark,
                     fontSize: 16,
@@ -342,26 +531,20 @@ class _HomepageState extends State<Homepage> {
                 style: TextButton.styleFrom(foregroundColor: AppTheme.textGray),
                 child: const Text('Close'),
               ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _focusOnUser(userLocation);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryGreen,
-                  foregroundColor: AppTheme.cardWhite,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                  ),
-                ),
-                child: const Text('Focus on Map'),
-              ),
             ],
           ),
     );
   }
 
   void _toggleRoutes() {
+    final navigationProvider = context.read<NavigationProvider>();
+
+    // Stop route toggle during navigation
+    if (navigationProvider.isActive) {
+      AppSnackBar.showWarning(context, 'Routes disabled during navigation');
+      return;
+    }
+
     setState(() => _showRoutes = !_showRoutes);
 
     if (_showRoutes) {
@@ -398,14 +581,6 @@ class _HomepageState extends State<Homepage> {
     );
   }
 
-  void _focusOnUser(UserLocation userLocation) {
-    final userLocationProvider = context.read<UserLocationProvider>();
-    final focusLocation = userLocationProvider.getFocusLocationForUser(
-      userLocation,
-    );
-    _mapController.move(focusLocation, 16.0);
-  }
-
   void _showAllLocations() {
     _mapController.fitBoundsWithPadding(50.0);
   }
@@ -423,18 +598,12 @@ class _HomepageState extends State<Homepage> {
 
   // Handle marker clicks from WebView
   void _handleMarkerClick(int markerIndex) {
-    debugPrint('Handling marker click for index: $markerIndex');
-
     final markerData = _markerIndexMap[markerIndex];
     if (markerData != null) {
       final userId = markerData.key;
       final userLocation = markerData.value;
-      debugPrint(
-        'Found marker data: $userId at ${userLocation.latitude}, ${userLocation.longitude}',
-      );
       _showUserInfo(userId, userLocation);
     } else {
-      debugPrint('No marker data found for index: $markerIndex');
       final userLocationProvider = context.read<UserLocationProvider>();
       // Check if it's the current user marker (index 0)
       if (markerIndex == 0 && userLocationProvider.locationPermissionGranted) {
@@ -468,13 +637,6 @@ class _HomepageState extends State<Homepage> {
   void _handleRouteModeChanged(String mode) {
     final routeProvider = context.read<RouteProvider>();
     routeProvider.setRouteMode(mode);
-    if (_showRoutes) {
-      _updateRoutes();
-    }
-  }
-
-  // Handle route filter changes
-  void _handleRouteFilterChanged() {
     if (_showRoutes) {
       _updateRoutes();
     }
@@ -551,9 +713,11 @@ class _HomepageState extends State<Homepage> {
             },
           ),
           // Route toggle button
-          Consumer<LocationProvider>(
-            builder: (context, locationProvider, _) {
+          Consumer2<LocationProvider, NavigationProvider>(
+            builder: (context, locationProvider, navigationProvider, _) {
               final hasUsers = locationProvider.userLocations.isNotEmpty;
+              final isNavigating = navigationProvider.isActive;
+
               return Container(
                 margin: EdgeInsets.only(right: AppTheme.spacingSmall),
                 decoration: BoxDecoration(
@@ -563,7 +727,7 @@ class _HomepageState extends State<Homepage> {
                   boxShadow: [AppTheme.lightShadow],
                 ),
                 child: IconButton(
-                  onPressed: hasUsers ? _toggleRoutes : null,
+                  onPressed: (hasUsers && !isNavigating) ? _toggleRoutes : null,
                   icon: Icon(
                     _showRoutes ? Icons.route : Icons.route_outlined,
                     color: _showRoutes ? AppTheme.cardWhite : AppTheme.textDark,
@@ -631,138 +795,135 @@ class _HomepageState extends State<Homepage> {
             );
           }
 
-          return Stack(
-            children: [
-              MapWebView(
-                controller: _mapController,
-                initialCenter: userLocationProvider.currentLocation!,
-                initialZoom: 15.0,
-                minZoom: 3.0,
-                maxZoom: 18.0,
-                markers: _markers,
-                polylines: _polylines,
-                onMarkerTap: (int markerIndex) {
-                  debugPrint(
-                    'MapWebView onMarkerTap called with index: $markerIndex',
-                  );
-                  _handleMarkerClick(markerIndex);
-                },
-              ),
-              InteractivePane(
-                currentLocation: userLocationProvider.currentLocation,
-                onSendLocation: _handleSendLocation,
-                serverUrlController: _serverUrlController,
-                roomIdController: _roomIdController,
-                userIdController: _userIdController,
-                onConnect: _handleConnect,
-                onDisconnect: _handleDisconnect,
-                isExpanded: _isExpanded,
-                onToggleExpand:
-                    () => setState(() => _isExpanded = !_isExpanded),
-                onRouteModeChanged: _handleRouteModeChanged,
-                onRouteFilterChanged: _handleRouteFilterChanged,
-                pageController: _pageController,
-                currentPage: _currentPage,
-                onPageChanged: _handlePageChanged,
-              ),
+          return SafeArea(
+            child: Stack(
+              children: [
+                MapWebView(
+                  controller: _mapController,
+                  initialCenter: userLocationProvider.currentLocation!,
+                  initialZoom: 15.0,
+                  minZoom: 3.0,
+                  maxZoom: 18.0,
+                  markers: _markers,
+                  polylines: _polylines,
+                  onMarkerTap: (int markerIndex) {
+                    _handleMarkerClick(markerIndex);
+                  },
+                ),
 
-              // Routes loading indicator
-              Consumer<RouteProvider>(
-                builder: (context, routeProvider, _) {
-                  if (!routeProvider.isLoadingRoutes) return SizedBox.shrink();
+                // Navigation metrics panel
+                Consumer<NavigationProvider>(
+                  builder: (context, navigationProvider, _) {
+                    if (!navigationProvider.isActive) return SizedBox.shrink();
 
-                  return Positioned(
-                    top: AppTheme.spacingMedium,
-                    left: AppTheme.spacingMedium,
-                    child: Container(
-                      padding: EdgeInsets.all(AppTheme.spacingSmall + 4),
-                      decoration: BoxDecoration(
-                        color: AppTheme.cardWhite,
-                        borderRadius: BorderRadius.circular(
-                          AppTheme.radiusMedium,
+                    return Positioned(
+                      top: AppTheme.spacingMedium,
+                      left: AppTheme.spacingMedium,
+                      right: AppTheme.spacingMedium,
+                      child: NavigationMetricsPanel(
+                        metrics: navigationProvider.metrics,
+                        isRerouting: navigationProvider.isRerouting,
+                        destinationUserId: navigationProvider.destinationUserId,
+                        onRouteModeChanged: _handleRouteModeChanged,
+                        onStop: _stopNavigation,
+                        onRecenter: () {
+                          if (userLocationProvider.currentLocation != null) {
+                            _mapController.move(
+                              userLocationProvider.currentLocation!,
+                              16.0,
+                            );
+                          }
+                        },
+                      ),
+                    );
+                  },
+                ),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: InteractivePane(
+                    currentLocation: userLocationProvider.currentLocation,
+                    onSendLocation: _handleSendLocation,
+                    serverUrlController: _serverUrlController,
+                    roomIdController: _roomIdController,
+                    userIdController: _userIdController,
+                    onConnect: _handleConnect,
+                    onDisconnect: _handleDisconnect,
+                    isExpanded: _isExpanded,
+                    onToggleExpand:
+                        () => setState(() => _isExpanded = !_isExpanded),
+                    pageController: _pageController,
+                    currentPage: _currentPage,
+                    onPageChanged: _handlePageChanged,
+                  ),
+                ),
+                // Routes loading indicator
+                Consumer<RouteProvider>(
+                  builder: (context, routeProvider, _) {
+                    if (!routeProvider.isLoadingRoutes)
+                      return SizedBox.shrink();
+
+                    return Positioned(
+                      top: AppTheme.spacingMedium,
+                      left: AppTheme.spacingMedium,
+                      child: Container(
+                        padding: EdgeInsets.all(AppTheme.spacingSmall + 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cardWhite,
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusMedium,
+                          ),
+                          boxShadow: [AppTheme.lightShadow],
                         ),
-                        boxShadow: [AppTheme.lightShadow],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTheme.infoBlue,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppTheme.infoBlue,
+                              ),
                             ),
-                          ),
-                          SizedBox(width: AppTheme.spacingSmall),
-                          Text(
-                            'Loading Routes...',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.infoBlue,
-                              fontWeight: FontWeight.w500,
+                            SizedBox(width: AppTheme.spacingSmall),
+                            Text(
+                              'Loading Routes...',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.infoBlue,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ],
+                    );
+                  },
+                ),
+
+                Consumer<ConnectionProvider>(
+                  builder: (context, connectionProvider, _) {
+                    final locationprovider = context.read<LocationProvider>();
+                    return Row(
+                      children: [
+                        if (locationprovider.userLocations.isNotEmpty)
+                          AppChipButton(
+                            label: 'All of Us',
+                            onTap: _showAllLocations,
+                          ),
+                        const SizedBox(width: 10),
+                        AppChipButton(label: 'Refresh', onTap: _refreshData),
+                        const SizedBox(width: 10),
+                        AppChipButton(label: 'Me', onTap: _getCurrentLocation),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
           );
         },
       ),
-      floatingActionButton:
-          _isExpanded
-              ? null
-              : Consumer<ConnectionProvider>(
-                builder: (context, connectionProvider, _) {
-                  final locationProvider = context.read<LocationProvider>();
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      if (locationProvider.userLocations.isNotEmpty)
-                        FloatingActionButton(
-                          mini: true,
-                          shape: const CircleBorder(),
-                          onPressed: () {
-                            _hasInitializedMap = true;
-                            _showAllLocations();
-                          },
-                          backgroundColor: AppTheme.primaryNavy,
-                          child: Icon(
-                            Icons.zoom_out_map,
-                            color: AppTheme.cardWhite,
-                            size: 20,
-                          ),
-                        ),
-                      SizedBox(height: AppTheme.spacingSmall + 2),
-                      FloatingActionButton(
-                        mini: true,
-                        shape: const CircleBorder(),
-                        onPressed: _refreshData,
-                        backgroundColor: AppTheme.infoBlue,
-                        child: Icon(
-                          Icons.refresh,
-                          color: AppTheme.cardWhite,
-                          size: 20,
-                        ),
-                      ),
-                      SizedBox(height: AppTheme.spacingSmall + 2),
-                      FloatingActionButton(
-                        shape: const CircleBorder(),
-                        onPressed: _getCurrentLocation,
-                        backgroundColor: AppTheme.primaryGreen,
-                        child: Icon(
-                          Icons.my_location,
-                          color: AppTheme.cardWhite,
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
     );
   }
 }
