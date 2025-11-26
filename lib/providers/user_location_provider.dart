@@ -53,7 +53,7 @@ class UserLocationProvider extends ChangeNotifier {
   /// Start continuous location tracking
   Stream<LatLng>? startContinuousTracking({
     Duration interval = const Duration(seconds: 5),
-    double distanceFilter = 10.0,
+    int distanceFilter = 5,
     Function(LatLng)? onLocationUpdate,
   }) {
     if (!_locationPermissionGranted) {

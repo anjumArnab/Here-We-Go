@@ -117,7 +117,7 @@ class UserLocationHandler {
   /// Returns a stream that emits location updates
   Stream<LatLng> startContinuousTracking({
     Duration interval = const Duration(seconds: 5),
-    double distanceFilter = 10.0, // meters
+    int distanceFilter = 5, // meters
   }) {
     // Stop any existing tracking
     stopContinuousTracking();
@@ -126,9 +126,9 @@ class UserLocationHandler {
     _locationStreamController = StreamController<LatLng>.broadcast();
 
     // Configure location settings for navigation
-    const locationSettings = LocationSettings(
+    final locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 5,
+      distanceFilter: distanceFilter,
     );
 
     // Start listening to position stream
