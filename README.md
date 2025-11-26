@@ -1,6 +1,6 @@
 # Here We Go
 
-Here We Go is a comprehensive real-time location tracking and navigation application built with Flutter, Node.js, and Socket.IO. It enables users to share their live GPS locations, communicate through group chat, and navigate to each other with turn by turn directions, all within a collaborative environment.
+Here We Go is a real-time location tracking and navigation application built with Flutter, Node.js, and Socket.IO. It enables users to share their live GPS locations, communicate through group chat, and navigate to each other with turn by turn directions, all within a collaborative environment.
 
 ## Features
 
