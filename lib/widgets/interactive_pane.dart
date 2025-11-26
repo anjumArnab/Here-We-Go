@@ -9,7 +9,6 @@ import '../app_theme.dart';
 import '../widgets/app_text_field.dart';
 import '../providers/connection_provider.dart';
 
-
 class InteractivePane extends StatelessWidget {
   final LatLng? currentLocation;
   final VoidCallback? onSendLocation;
@@ -48,7 +47,6 @@ class InteractivePane extends StatelessWidget {
       child: Container(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.35,
-          maxWidth: MediaQuery.of(context).size.width * 0.95,
         ),
         decoration: BoxDecoration(
           color: AppTheme.cardWhite,
@@ -303,5 +301,4 @@ class InteractivePane extends StatelessWidget {
       },
     );
   }
-
 }
