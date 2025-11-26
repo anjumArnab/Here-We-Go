@@ -29,7 +29,7 @@ Here We Go is a real-time location tracking and navigation application built wit
 - Start the `herewego-server` by running `npm run dev`.
 - Use ngrok to expose the local server to the internet by running `ngrok http 3000` (the backend runs on port 3000).
 - Launch the application, connect it to the server, and enable location sharing with other users.
-- Set up the following Node.js server to support real-time location sharing, route visualization, and messaging functionality.
+- Set up the following Node.js server to test real-time location sharing, route visualization, and messaging functionality.
 
 ``` javascript
 // Configuration
