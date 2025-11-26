@@ -21,9 +21,13 @@ Here We Go is a real-time location tracking and navigation application built wit
 ## Technical Stack
 
 **Frontend:** Flutter, Provider, Geolocator, WebView, Flutter Local Notifications
+
 **Backend:** Node.js, Express, Socket.IO, CORS
+
 **Mapping:** OpenStreetMap tiles, Leaflet.js, OSRM API
+
 **Communication:** WebSocket (Socket.IO), JavaScript Channel (WebView Bridge)
+
 **State:** Singleton services, Stream based reactivity, In memory caching
 
 ## Preview
