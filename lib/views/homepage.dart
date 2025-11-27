@@ -817,9 +817,9 @@ class _HomepageState extends State<Homepage> {
                     if (!navigationProvider.isActive) return SizedBox.shrink();
 
                     return Positioned(
-                      top: AppTheme.spacingMedium,
-                      left: AppTheme.spacingMedium,
-                      right: AppTheme.spacingMedium,
+                      top: AppTheme.position,
+                      left: AppTheme.position,
+                      right: AppTheme.position,
                       child: NavigationMetricsPanel(
                         metrics: navigationProvider.metrics,
                         isRerouting: navigationProvider.isRerouting,
@@ -863,8 +863,8 @@ class _HomepageState extends State<Homepage> {
                       return SizedBox.shrink();
 
                     return Positioned(
-                      top: AppTheme.spacingMedium,
-                      left: AppTheme.spacingMedium,
+                      top: AppTheme.position,
+                      left: AppTheme.position,
                       child: Container(
                         padding: EdgeInsets.all(AppTheme.spacingSmall + 4),
                         decoration: BoxDecoration(
