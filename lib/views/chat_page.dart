@@ -4,6 +4,7 @@ import '../providers/chat_provider.dart';
 import '../providers/connection_provider.dart';
 import '../models/chat_message.dart';
 import '../app_theme.dart';
+import '../widgets/app_snack_bar.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -112,12 +113,7 @@ class _ChatPageState extends State<ChatPage> {
           // Show error if any
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (chatProvider.lastError != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(chatProvider.lastError!),
-                  backgroundColor: AppTheme.errorRed,
-                ),
-              );
+              AppSnackBar.showError(context, chatProvider.lastError!);
               chatProvider.clearLastError();
             }
           });
