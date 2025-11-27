@@ -48,6 +48,7 @@ class AppTheme {
   );
 
   // Border Radius
+  static const double radiusXSmall = 4.0;
   static const double radiusSmall = 6.0;
   static const double radiusMedium = 8.0;
   static const double radiusLarge = 12.0;
@@ -57,4 +58,7 @@ class AppTheme {
   static const double spacingSmall = 8.0;
   static const double spacingMedium = 16.0;
   static const double spacingLarge = 24.0;
+
+  // Position
+  static const double position = 16.0;
 }
