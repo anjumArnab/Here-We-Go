@@ -107,7 +107,7 @@ class InteractivePane extends StatelessWidget {
                   currentPage == index
                       ? AppTheme.primaryGreen
                       : AppTheme.gray300,
-              borderRadius: BorderRadius.circular(AppTheme.spacingXSmall),
+              borderRadius: BorderRadius.circular(AppTheme.radiusXSmall),
             ),
           );
         }),
