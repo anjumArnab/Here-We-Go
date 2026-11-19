@@ -67,7 +67,7 @@ class _HomepageState extends State<Homepage> {
 
     // Check if already connected
     if (connectionProvider.isConnected) {
-      context.read<LocationProvider>().requestAllLocations();
+      unawaited(context.read<LocationProvider>().requestAllLocations());
     }
   }
 
@@ -202,7 +202,9 @@ class _HomepageState extends State<Homepage> {
       }
 
       if (userLocationProvider.currentLocation != null) {
-        _mapController.move(userLocationProvider.currentLocation!, 15.0);
+        unawaited(
+          _mapController.move(userLocationProvider.currentLocation!, 15.0),
+        );
       }
 
       _updateUserMarkers();
@@ -245,7 +247,7 @@ class _HomepageState extends State<Homepage> {
       // Only zoom on initial load
       if (!_hasInitializedMap && locationProvider.userLocations.length > 1) {
         _hasInitializedMap = true;
-        Future.delayed(Duration(milliseconds: 300), () {
+        Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) {
             _showAllLocations();
           }
@@ -358,7 +360,7 @@ class _HomepageState extends State<Homepage> {
                 value: routeInfo.directDistance,
               ),
               if (_showRoutes) ...[
-                Divider(color: AppTheme.gray200),
+                const Divider(color: AppTheme.gray200),
                 InfoRow(label: 'Travel Mode', value: routeInfo.travelMode),
               ],
             ],
@@ -414,7 +416,7 @@ class _HomepageState extends State<Homepage> {
         }
 
         // Update navigation route
-        _updateNavigationRoute();
+        unawaited(_updateNavigationRoute());
 
         AppSnackBar.showSuccess(context, 'Navigation started to $userId');
       } else {
@@ -497,7 +499,7 @@ class _HomepageState extends State<Homepage> {
     await _getCurrentLocation();
 
     if (connectionProvider.isConnected) {
-      locationProvider.requestAllLocations();
+      unawaited(locationProvider.requestAllLocations());
     }
   }
 
@@ -568,7 +570,7 @@ class _HomepageState extends State<Homepage> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundLight,
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Here We Go',
           style: TextStyle(
             color: AppTheme.textDark,
@@ -638,7 +640,8 @@ class _HomepageState extends State<Homepage> {
                 // Navigation metrics panel
                 Consumer<NavigationProvider>(
                   builder: (context, navigationProvider, _) {
-                    if (!navigationProvider.isActive) return SizedBox.shrink();
+                    if (!navigationProvider.isActive)
+                      return const SizedBox.shrink();
 
                     return Positioned(
                       top: AppTheme.position,
