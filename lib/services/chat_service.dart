@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import '../core/constants/socket_events.dart';
+import '../core/network/socket_client.dart';
 import '../models/chat_message.dart';
 import 'notification_service.dart';
 
@@ -11,7 +12,7 @@ class ChatService {
   ChatService._internal();
 
   // Socket reference
-  IO.Socket? _socket;
+  SocketClient? _socket;
 
   // Notification service reference
   final NotificationService _notificationService = NotificationService();
@@ -46,7 +47,7 @@ class ChatService {
 
   // Initialize with socket
   void initialize({
-    required IO.Socket socket,
+    required SocketClient socket,
     required String roomId,
     required String userId,
   }) {
@@ -63,12 +64,12 @@ class ChatService {
   void _setupChatListeners() {
     if (_socket == null) return;
 
-    _socket!.on('new-message', (data) {
+    _socket!.on(SocketEvents.newMessage, (data) {
       developer.log('New message received: $data');
       _handleNewMessage(data);
     });
 
-    _socket!.on('chat-history', (data) {
+    _socket!.on(SocketEvents.chatHistory, (data) {
       developer.log('Chat history received');
       _handleChatHistory(data);
     });
@@ -125,7 +126,7 @@ class ChatService {
 
     try {
       developer.log('Sending message: $message');
-      _socket!.emit('send-message', {
+      _socket!.emit(SocketEvents.sendMessage, {
         'roomId': _currentRoomId,
         'userId': _currentUserId,
         'message': message.trim(),
@@ -147,7 +148,7 @@ class ChatService {
 
     try {
       developer.log('Requesting chat history');
-      _socket!.emit('get-chat-history', {'roomId': _currentRoomId});
+      _socket!.emit(SocketEvents.getChatHistory, {'roomId': _currentRoomId});
     } catch (e) {
       developer.log('Error requesting chat history: $e');
       _errorController.add('Failed to get chat history: $e');

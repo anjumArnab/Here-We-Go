@@ -158,9 +158,9 @@ class _HomepageState extends State<Homepage> {
     );
 
     if (mounted && success) {
-      // Get socket from ConnectionProvider
-      final socket = connectionProvider.socket;
-      if (socket != null) {
+      // Get socket client from ConnectionProvider
+      final socket = connectionProvider.socketClient;
+      if (socket.hasSocket) {
         // Initialize LocationProvider
         locationProvider.initialize(
           socket: socket,

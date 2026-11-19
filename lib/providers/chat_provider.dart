@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import '../core/network/socket_client.dart';
 import '../services/chat_service.dart';
 import '../models/chat_message.dart';
 
@@ -54,7 +54,7 @@ class ChatProvider extends ChangeNotifier {
 
   // Initialize with socket from ConnectionProvider
   void initialize({
-    required IO.Socket socket,
+    required SocketClient socket,
     required String roomId,
     required String userId,
   }) {

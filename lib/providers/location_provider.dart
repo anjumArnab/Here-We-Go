@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import '../core/network/socket_client.dart';
 import '../services/location_service.dart';
 import '../models/user_location.dart';
 
@@ -47,7 +47,7 @@ class LocationProvider extends ChangeNotifier {
 
   // Initialize with socket from ConnectionProvider
   void initialize({
-    required IO.Socket socket,
+    required SocketClient socket,
     required String roomId,
     required String userId,
   }) {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import '../core/constants/socket_events.dart';
+import '../core/network/socket_client.dart';
 import '../models/user_location.dart';
 
 class LocationService {
@@ -10,7 +11,7 @@ class LocationService {
   LocationService._internal();
 
   // Socket reference
-  IO.Socket? _socket;
+  SocketClient? _socket;
 
   // Location state
   String? _currentRoomId;
@@ -40,7 +41,7 @@ class LocationService {
 
   // Initialize with socket
   void initialize({
-    required IO.Socket socket,
+    required SocketClient socket,
     required String roomId,
     required String userId,
   }) {
@@ -58,26 +59,26 @@ class LocationService {
   void _setupLocationListeners() {
     if (_socket == null) return;
 
-    _socket!.on('location-update', (data) {
+    _socket!.on(SocketEvents.locationUpdate, (data) {
       developer.log('Location update received: ${data['userId']}');
       _handleLocationUpdate(data);
     });
 
-    _socket!.on('existing-locations', (data) {
+    _socket!.on(SocketEvents.existingLocations, (data) {
       developer.log('Existing locations received');
       _handleExistingLocations(data);
     });
 
-    _socket!.on('all-locations', (data) {
+    _socket!.on(SocketEvents.allLocations, (data) {
       developer.log('All locations received');
       _handleAllLocations(data);
     });
 
-    _socket!.on('location-shared', (data) {
+    _socket!.on(SocketEvents.locationShared, (data) {
       developer.log('Location shared successfully');
     });
 
-    _socket!.on('user-left', (data) {
+    _socket!.on(SocketEvents.userLeft, (data) {
       developer.log('User left, removing location: ${data['userId']}');
       _handleUserLeft(data);
     });
@@ -141,7 +142,7 @@ class LocationService {
     try {
       developer.log('Sharing location: $latitude, $longitude');
 
-      _socket!.emit('share-location', {
+      _socket!.emit(SocketEvents.shareLocation, {
         'roomId': _currentRoomId,
         'userId': _currentUserId,
         'latitude': latitude,
@@ -175,7 +176,7 @@ class LocationService {
 
     try {
       developer.log('Requesting all locations');
-      _socket!.emit('get-all-locations', {'roomId': _currentRoomId});
+      _socket!.emit(SocketEvents.getAllLocations, {'roomId': _currentRoomId});
     } catch (e) {
       developer.log('Error requesting locations: $e');
       _errorController.add('Failed to get locations: $e');

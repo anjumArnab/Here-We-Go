@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import '../core/constants/app_constants.dart';
+import '../core/constants/socket_events.dart';
+import '../core/network/socket_client.dart';
 import '../models/connection_status.dart';
 
 class ConnectionService {
@@ -9,8 +11,8 @@ class ConnectionService {
   factory ConnectionService() => _instance;
   ConnectionService._internal();
 
-  // Socket.io client
-  IO.Socket? _socket;
+  // Shared socket connection
+  final SocketClient _socketClient = SocketClient();
 
   // Connection state
   bool _isConnected = false;
@@ -38,7 +40,7 @@ class ConnectionService {
   String? get currentRoomId => _currentRoomId;
   String? get currentUserId => _currentUserId;
   List<String> get roomUsers => List.unmodifiable(_roomUsers);
-  IO.Socket? get socket => _socket;
+  SocketClient get socketClient => _socketClient;
 
   // Connect to server and join room
   Future<bool> connectToServer({
@@ -56,36 +58,28 @@ class ConnectionService {
       _currentRoomId = roomId;
       _currentUserId = userId;
 
-      // Configure socket options
-      _socket = IO.io(
-        serverUrl,
-        IO.OptionBuilder()
-            .setTransports(['websocket'])
-            .enableAutoConnect()
-            .enableReconnection()
-            .setReconnectionAttempts(5)
-            .setReconnectionDelay(1000)
-            .setTimeout(10000)
-            .build(),
-      );
+      _socketClient.connect(serverUrl);
 
       // Set up event listeners
       _setupConnectionListeners();
 
       // Wait for connection
       final Completer<bool> connectionCompleter = Completer<bool>();
-      Timer connectionTimeout = Timer(Duration(seconds: 15), () {
+      Timer connectionTimeout = Timer(AppConstants.joinRoomTimeout, () {
         if (!connectionCompleter.isCompleted) {
           connectionCompleter.complete(false);
         }
       });
 
-      _socket!.onConnect((_) {
+      _socketClient.onConnect(() {
         developer.log('Connected to server, joining room...');
-        _socket!.emit('join-room', {'roomId': roomId, 'userId': userId});
+        _socketClient.emit(SocketEvents.joinRoom, {
+          'roomId': roomId,
+          'userId': userId,
+        });
       });
 
-      _socket!.on('joined-room', (data) {
+      _socketClient.on(SocketEvents.joinedRoom, (data) {
         connectionTimeout.cancel();
         if (!connectionCompleter.isCompleted) {
           developer.log('Successfully joined room: ${data['roomId']}');
@@ -94,7 +88,7 @@ class ConnectionService {
         }
       });
 
-      _socket!.onConnectError((error) {
+      _socketClient.onConnectError((error) {
         developer.log('Connection error: $error');
         connectionTimeout.cancel();
         if (!connectionCompleter.isCompleted) {
@@ -103,7 +97,6 @@ class ConnectionService {
         }
       });
 
-      _socket!.connect();
       return await connectionCompleter.future;
     } catch (e) {
       developer.log('Connection exception: $e');
@@ -114,13 +107,11 @@ class ConnectionService {
 
   // Set up connection-related event listeners
   void _setupConnectionListeners() {
-    if (_socket == null) return;
-
-    _socket!.onConnect((_) {
+    _socketClient.onConnect(() {
       developer.log('Socket connected');
     });
 
-    _socket!.onDisconnect((reason) {
+    _socketClient.onDisconnect((reason) {
       developer.log('Socket disconnected: $reason');
       _isConnected = false;
       _connectionController.add(
@@ -128,17 +119,17 @@ class ConnectionService {
       );
     });
 
-    _socket!.on('user-joined', (data) {
+    _socketClient.on(SocketEvents.userJoined, (data) {
       developer.log('User joined: ${data['userId']}');
       _handleUserJoined(data);
     });
 
-    _socket!.on('user-left', (data) {
+    _socketClient.on(SocketEvents.userLeft, (data) {
       developer.log('User left: ${data['userId']}');
       _handleUserLeft(data);
     });
 
-    _socket!.on('error', (data) {
+    _socketClient.on(SocketEvents.error, (data) {
       developer.log('Server error: ${data['message']}');
       _errorController.add(data['message'] ?? 'Unknown server error');
     });
@@ -207,9 +198,9 @@ class ConnectionService {
 
   // Leave current room
   Future<void> leaveRoom() async {
-    if (_socket != null && _isConnected) {
+    if (_socketClient.hasSocket && _isConnected) {
       developer.log('Leaving room');
-      _socket!.emit('leave-room');
+      _socketClient.emit(SocketEvents.leaveRoom);
     }
 
     _isConnected = false;
@@ -224,14 +215,12 @@ class ConnectionService {
 
   // Disconnect from server
   Future<void> disconnect() async {
-    if (_socket != null) {
+    if (_socketClient.hasSocket) {
       developer.log('Disconnecting from server');
 
       await leaveRoom();
 
-      _socket!.disconnect();
-      _socket!.dispose();
-      _socket = null;
+      _socketClient.disconnect();
     }
 
     _serverUrl = null;

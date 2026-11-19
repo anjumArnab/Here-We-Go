@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import '../core/network/socket_client.dart';
 import '../models/connection_status.dart';
 import '../services/connection_service.dart';
 
@@ -30,7 +30,7 @@ class ConnectionProvider extends ChangeNotifier {
   String? get lastError => _lastError;
   String? get serverUrl => _connectionService.serverUrl;
   String? get connectionStatusMessage => _lastConnectionMessage;
-  IO.Socket? get socket => _connectionService.socket;
+  SocketClient get socketClient => _connectionService.socketClient;
 
   ConnectionProvider() {
     _setupListeners();
