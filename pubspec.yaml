@@ -25,6 +25,7 @@ dependencies:
   provider: ^6.1.5+1
   flutter_local_notifications: ^19.5.0
   flutter_native_splash: ^2.4.7
+  get_it: ^9.3.0
 
 dev_dependencies:
   flutter_test:
