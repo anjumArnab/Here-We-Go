@@ -20,6 +20,37 @@ Here We Go is a real-time location tracking and navigation application built wit
 - **Communication:** WebSocket (Socket.IO), JavaScript Channel (WebView Bridge)
 - **State:** Singleton services, Stream based reactivity, In memory caching
 
+## Project Structure
+
+The app is organized feature-first. Shared infrastructure lives in `core/`, and each feature owns its models, services, providers and UI.
+
+```
+lib/
+├── main.dart
+├── core/
+│   ├── constants/   # api_constants, app_constants, socket_events
+│   ├── di/          # get_it service locator (service_locator.dart)
+│   ├── network/     # ApiClient (HTTP), SocketClient (Socket.IO), ApiException
+│   ├── services/    # notification_service
+│   └── theme/       # app_theme
+├── shared/widgets/  # reusable widgets (buttons, text field, snack bar)
+└── features/
+    ├── chat/        # data/ providers/ views/
+    ├── connection/  # data/ providers/
+    ├── location/    # data/ providers/
+    ├── map/         # data/ views/   (Leaflet page lives in assets/map/)
+    ├── navigation/  # data/ providers/ widgets/
+    ├── routing/     # data/ providers/
+    └── home/        # views/ widgets/
+assets/map/          # map.html, map.css, map.js loaded into the WebView
+test/                # unit tests mirroring lib/
+```
+
+- **HTTP:** all requests go through `ApiClient`, which applies the base URL, timeout and JSON decoding and throws a typed `ApiException`.
+- **Sockets:** one `SocketClient` owns the Socket.IO connection. Event names are constants in `SocketEvents`.
+- **Dependency injection:** services are registered in `core/di/service_locator.dart` with `get_it` and passed to providers through constructors. There are no hand-written singletons.
+- **Tests:** run `flutter test`.
+
 ## Preview
 
 ![HereWeGo](assets/herewego.gif)
