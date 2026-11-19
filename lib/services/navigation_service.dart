@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import '../core/constants/app_constants.dart';
 import '../models/navigation_state.dart';
 import '../models/navigation_metrics.dart';
 import '../models/user_location.dart';
@@ -26,10 +27,12 @@ class NavigationService {
   DateTime? _lastRouteUpdateTime;
 
   // Configuration
-  static const double deviationThreshold = 50.0; // meters
-  static const double arrivalThreshold = 10.0; // meters
-  static const Duration rerouteDebounce = Duration(seconds: 15);
-  static const Duration metricsUpdateInterval = Duration(seconds: 2);
+  static const double deviationThreshold =
+      AppConstants.deviationThresholdMeters;
+  static const double arrivalThreshold = AppConstants.arrivalThresholdMeters;
+  static const Duration rerouteDebounce = AppConstants.rerouteDebounce;
+  static const Duration metricsUpdateInterval =
+      AppConstants.metricsUpdateInterval;
 
   // Stream controllers
   final StreamController<NavigationState> _stateController =
