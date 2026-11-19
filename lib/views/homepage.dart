@@ -1,13 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:herewego/widgets/app_chip_button.dart';
 import 'package:provider/provider.dart';
 import '../models/map_marker_data.dart';
 import '../providers/chat_provider.dart';
 import '../providers/connection_provider.dart';
 import '../providers/navigation_provider.dart';
-import '../views/chat_page.dart';
 import '../widgets/app_snack_bar.dart';
 import '../widgets/navigation_metrics_panel.dart';
 import '../app_theme.dart';
@@ -16,6 +14,13 @@ import '../providers/location_provider.dart';
 import '../providers/route_provider.dart';
 import '../providers/user_location_provider.dart';
 import '../models/user_location.dart';
+import '../widgets/home/chat_action_button.dart';
+import '../widgets/home/info_row.dart';
+import '../widgets/home/map_loading_view.dart';
+import '../widgets/home/map_quick_actions.dart';
+import '../widgets/home/route_toggle_button.dart';
+import '../widgets/home/routes_loading_indicator.dart';
+import '../widgets/home/user_info_dialog.dart';
 import '../widgets/interactive_pane.dart';
 
 class Homepage extends StatefulWidget {
@@ -339,67 +344,28 @@ class _HomepageState extends State<Homepage> {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.cardWhite,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-            ),
-            title: Row(
-              children: [
-                Icon(Icons.person, color: AppTheme.infoBlue),
-                SizedBox(width: AppTheme.spacingSmall),
-                Text(
-                  'Friend: $userId',
-                  style: TextStyle(
-                    color: AppTheme.textDark,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildInfoRow(
-                  'Location',
-                  '${userLocation.latitude.toStringAsFixed(6)}, ${userLocation.longitude.toStringAsFixed(6)}',
-                ),
-                _buildInfoRow('Last Updated', routeInfo.lastUpdated),
-                _buildInfoRow('Direct Distance', routeInfo.directDistance),
-                if (_showRoutes) ...[
-                  Divider(color: AppTheme.gray200),
-                  _buildInfoRow('Travel Mode', routeInfo.travelMode),
-                ],
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: TextButton.styleFrom(foregroundColor: AppTheme.textGray),
-                child: const Text('Close'),
+          (context) => UserInfoDialog(
+            userId: userId,
+            details: [
+              InfoRow(
+                label: 'Location',
+                value:
+                    '${userLocation.latitude.toStringAsFixed(6)}, ${userLocation.longitude.toStringAsFixed(6)}',
               ),
-              // Navigate button
-              if (!navigationProvider.isActive)
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    _startNavigation(userId, userLocation);
-                  },
-                  icon: Icon(Icons.navigation, size: 18),
-                  label: const Text('Navigate'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.navigationBlue,
-                    foregroundColor: AppTheme.cardWhite,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        AppTheme.radiusMedium,
-                      ),
-                    ),
-                  ),
-                ),
+              InfoRow(label: 'Last Updated', value: routeInfo.lastUpdated),
+              InfoRow(
+                label: 'Direct Distance',
+                value: routeInfo.directDistance,
+              ),
+              if (_showRoutes) ...[
+                Divider(color: AppTheme.gray200),
+                InfoRow(label: 'Travel Mode', value: routeInfo.travelMode),
+              ],
             ],
+            onNavigate:
+                navigationProvider.isActive
+                    ? null
+                    : () => _startNavigation(userId, userLocation),
           ),
     );
   }
@@ -480,44 +446,19 @@ class _HomepageState extends State<Homepage> {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            backgroundColor: AppTheme.cardWhite,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-            ),
-            title: Row(
-              children: [
-                Icon(Icons.person, color: AppTheme.infoBlue),
-                SizedBox(width: AppTheme.spacingSmall),
-                Text(
-                  'Friend: $userId',
-                  style: TextStyle(
-                    color: AppTheme.textDark,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+          (context) => UserInfoDialog(
+            userId: userId,
+            details: [
+              InfoRow(
+                label: 'Location',
+                value:
+                    '${userLocation.latitude.toStringAsFixed(6)}, ${userLocation.longitude.toStringAsFixed(6)}',
+              ),
+              InfoRow(
+                label: 'Last Updated',
+                value: userLocationProvider.formatTimestamp(
+                  userLocation.timestamp,
                 ),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildInfoRow(
-                  'Location',
-                  '${userLocation.latitude.toStringAsFixed(6)}, ${userLocation.longitude.toStringAsFixed(6)}',
-                ),
-                _buildInfoRow(
-                  'Last Updated',
-                  userLocationProvider.formatTimestamp(userLocation.timestamp),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: TextButton.styleFrom(foregroundColor: AppTheme.textGray),
-                child: const Text('Close'),
               ),
             ],
           ),
@@ -543,30 +484,6 @@ class _HomepageState extends State<Homepage> {
       });
       context.read<RouteProvider>().clearRoutes();
     }
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: AppTheme.textDark,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(value, style: TextStyle(color: AppTheme.textGray)),
-          ),
-        ],
-      ),
-    );
   }
 
   void _showAllLocations() {
@@ -661,70 +578,8 @@ class _HomepageState extends State<Homepage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          // Chat button with badge
-          Consumer2<ConnectionProvider, ChatProvider>(
-            builder: (context, connectionProvider, chatProvider, _) {
-              return Container(
-                margin: EdgeInsets.only(right: AppTheme.spacingSmall),
-                decoration: BoxDecoration(
-                  color: AppTheme.cardWhite,
-                  shape: BoxShape.circle,
-                  boxShadow: [AppTheme.lightShadow],
-                ),
-                child: Badge(
-                  isLabelVisible: chatProvider.unreadCount > 0,
-                  label: Text('${chatProvider.unreadCount}'),
-                  child: IconButton(
-                    onPressed:
-                        connectionProvider.isConnected
-                            ? () {
-                              chatProvider.clearUnreadCount();
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const ChatPage(),
-                                ),
-                              );
-                            }
-                            : null,
-                    icon: Icon(
-                      Icons.chat_bubble_outline,
-                      color:
-                          connectionProvider.isConnected
-                              ? AppTheme.textDark
-                              : AppTheme.gray300,
-                    ),
-                    tooltip: 'Chat',
-                  ),
-                ),
-              );
-            },
-          ),
-          // Route toggle button
-          Consumer2<LocationProvider, NavigationProvider>(
-            builder: (context, locationProvider, navigationProvider, _) {
-              final hasUsers = locationProvider.userLocations.isNotEmpty;
-              final isNavigating = navigationProvider.isActive;
-
-              return Container(
-                margin: EdgeInsets.only(right: AppTheme.spacingSmall),
-                decoration: BoxDecoration(
-                  color:
-                      _showRoutes ? AppTheme.primaryGreen : AppTheme.cardWhite,
-                  shape: BoxShape.circle,
-                  boxShadow: [AppTheme.lightShadow],
-                ),
-                child: IconButton(
-                  onPressed: (hasUsers && !isNavigating) ? _toggleRoutes : null,
-                  icon: Icon(
-                    _showRoutes ? Icons.route : Icons.route_outlined,
-                    color: _showRoutes ? AppTheme.cardWhite : AppTheme.textDark,
-                  ),
-                  tooltip: _showRoutes ? 'Hide Routes' : 'Show Routes',
-                ),
-              );
-            },
-          ),
+          const ChatActionButton(),
+          RouteToggleButton(showRoutes: _showRoutes, onToggle: _toggleRoutes),
         ],
       ),
       body: Consumer3<
@@ -761,26 +616,7 @@ class _HomepageState extends State<Homepage> {
 
           if (userLocationProvider.isLoadingLocation ||
               userLocationProvider.currentLocation == null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    color: AppTheme.primaryGreen,
-                    strokeWidth: 3,
-                  ),
-                  SizedBox(height: AppTheme.spacingLarge - 4),
-                  Text(
-                    'Loading map...',
-                    style: TextStyle(
-                      color: AppTheme.primaryGreen,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            );
+            return const MapLoadingView();
           }
 
           return SafeArea(
@@ -844,68 +680,12 @@ class _HomepageState extends State<Homepage> {
                     onPageChanged: _handlePageChanged,
                   ),
                 ),
-                // Routes loading indicator
-                Consumer<RouteProvider>(
-                  builder: (context, routeProvider, _) {
-                    if (!routeProvider.isLoadingRoutes)
-                      return SizedBox.shrink();
+                const RoutesLoadingIndicator(),
 
-                    return Positioned(
-                      top: AppTheme.position,
-                      left: AppTheme.position,
-                      child: Container(
-                        padding: EdgeInsets.all(AppTheme.spacingSmall + 4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.cardWhite,
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.radiusMedium,
-                          ),
-                          boxShadow: [AppTheme.lightShadow],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppTheme.infoBlue,
-                              ),
-                            ),
-                            SizedBox(width: AppTheme.spacingSmall),
-                            Text(
-                              'Loading Routes...',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.infoBlue,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-                Consumer<ConnectionProvider>(
-                  builder: (context, connectionProvider, _) {
-                    final locationprovider = context.read<LocationProvider>();
-                    return Row(
-                      children: [
-                        if (locationprovider.userLocations.isNotEmpty)
-                          AppChipButton(
-                            label: 'All of Us',
-                            onTap: _showAllLocations,
-                          ),
-                        const SizedBox(width: 10),
-                        AppChipButton(label: 'Refresh', onTap: _refreshData),
-                        const SizedBox(width: 10),
-                        AppChipButton(label: 'Me', onTap: _getCurrentLocation),
-                      ],
-                    );
-                  },
+                MapQuickActions(
+                  onShowAll: _showAllLocations,
+                  onRefresh: _refreshData,
+                  onMyLocation: _getCurrentLocation,
                 ),
               ],
             ),
