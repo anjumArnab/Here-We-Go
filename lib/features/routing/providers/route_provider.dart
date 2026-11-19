@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
-import '../services/route_service.dart';
-import '../models/route_data.dart';
-import '../models/route_info.dart';
-import '../models/user_location.dart';
+import '../data/route_service.dart';
+import '../data/route_data.dart';
+import '../data/route_info.dart';
+import '../../../models/user_location.dart';
 
 class RouteProvider extends ChangeNotifier {
   final RouteService _routeService;

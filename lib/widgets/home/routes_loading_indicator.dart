@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
-import '../../providers/route_provider.dart';
+import '../../features/routing/providers/route_provider.dart';
 
 /// Small "Loading Routes..." badge pinned to the top-left of the map.
 /// Must be placed inside a [Stack].

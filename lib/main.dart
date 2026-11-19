@@ -5,7 +5,7 @@ import '../views/homepage.dart';
 import 'providers/chat_provider.dart';
 import 'providers/connection_provider.dart';
 import 'providers/location_provider.dart';
-import 'providers/route_provider.dart';
+import 'features/routing/providers/route_provider.dart';
 import 'providers/user_location_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'core/di/service_locator.dart';
@@ -14,7 +14,7 @@ import 'services/connection_service.dart';
 import 'services/location_service.dart';
 import 'services/navigation_service.dart';
 import 'core/services/notification_service.dart';
-import 'services/route_service.dart';
+import 'features/routing/data/route_service.dart';
 import 'services/user_location_handler.dart';
 
 void main() async {

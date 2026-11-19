@@ -11,7 +11,7 @@ import '../widgets/navigation_metrics_panel.dart';
 import '../core/theme/app_theme.dart';
 import 'map_webview.dart';
 import '../providers/location_provider.dart';
-import '../providers/route_provider.dart';
+import '../features/routing/providers/route_provider.dart';
 import '../providers/user_location_provider.dart';
 import '../models/user_location.dart';
 import '../widgets/home/chat_action_button.dart';

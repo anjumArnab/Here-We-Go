@@ -6,7 +6,7 @@ import '../core/constants/app_constants.dart';
 import '../models/navigation_state.dart';
 import '../models/navigation_metrics.dart';
 import '../models/user_location.dart';
-import 'route_service.dart';
+import '../features/routing/data/route_service.dart';
 
 class NavigationService {
   NavigationService(this._routeService);
