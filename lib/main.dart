@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../views/homepage.dart';
+import 'features/home/views/homepage.dart';
 import 'features/chat/providers/chat_provider.dart';
 import 'features/connection/providers/connection_provider.dart';
 import 'features/location/providers/location_provider.dart';

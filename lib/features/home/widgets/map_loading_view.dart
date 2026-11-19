@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Full-screen placeholder shown while the current location is unknown.
 class MapLoadingView extends StatelessWidget {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/theme/app_theme.dart';
-import '../../features/location/providers/location_provider.dart';
-import '../../features/navigation/providers/navigation_provider.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../location/providers/location_provider.dart';
+import '../../navigation/providers/navigation_provider.dart';
 
 /// App bar button that shows or hides routes to the other users.
 class RouteToggleButton extends StatelessWidget {

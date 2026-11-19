@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Dialog describing a friend on the map. Shows a Navigate button only when
 /// [onNavigate] is provided.

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../features/connection/providers/connection_provider.dart';
-import '../../features/location/providers/location_provider.dart';
-import '../../shared/widgets/app_chip_button.dart';
+import '../../connection/providers/connection_provider.dart';
+import '../../location/providers/location_provider.dart';
+import '../../../shared/widgets/app_chip_button.dart';
 
 /// Row of quick-action chips ("All of Us", "Refresh", "Me") over the map.
 class MapQuickActions extends StatelessWidget {
