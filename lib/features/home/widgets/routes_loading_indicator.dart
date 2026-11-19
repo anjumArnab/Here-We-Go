@@ -18,13 +18,13 @@ class RoutesLoadingIndicator extends StatelessWidget {
           top: AppTheme.position,
           left: AppTheme.position,
           child: Container(
-            padding: EdgeInsets.all(AppTheme.spacingSmall + 4),
+            padding: const EdgeInsets.all(AppTheme.spacingSmall + 4),
             decoration: BoxDecoration(
               color: AppTheme.cardWhite,
               borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
               boxShadow: [AppTheme.lightShadow],
             ),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(

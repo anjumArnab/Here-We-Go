@@ -24,11 +24,11 @@ class UserInfoDialog extends StatelessWidget {
       ),
       title: Row(
         children: [
-          Icon(Icons.person, color: AppTheme.infoBlue),
-          SizedBox(width: AppTheme.spacingSmall),
+          const Icon(Icons.person, color: AppTheme.infoBlue),
+          const SizedBox(width: AppTheme.spacingSmall),
           Text(
             'Friend: $userId',
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.textDark,
               fontSize: 16,
               fontWeight: FontWeight.w600,

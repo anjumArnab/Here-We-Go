@@ -14,7 +14,7 @@ class ChatActionButton extends StatelessWidget {
     return Consumer2<ConnectionProvider, ChatProvider>(
       builder: (context, connectionProvider, chatProvider, _) {
         return Container(
-          margin: EdgeInsets.only(right: AppTheme.spacingSmall),
+          margin: const EdgeInsets.only(right: AppTheme.spacingSmall),
           decoration: BoxDecoration(
             color: AppTheme.cardWhite,
             shape: BoxShape.circle,

@@ -107,7 +107,7 @@ class AppSnackBar {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Location sent successfully!',
             style: TextStyle(
               fontWeight: FontWeight.w600,

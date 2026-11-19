@@ -19,14 +19,14 @@ class InfoRow extends StatelessWidget {
             width: 100,
             child: Text(
               '$label:',
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.w500,
                 color: AppTheme.textDark,
               ),
             ),
           ),
           Expanded(
-            child: Text(value, style: TextStyle(color: AppTheme.textGray)),
+            child: Text(value, style: const TextStyle(color: AppTheme.textGray)),
           ),
         ],
       ),

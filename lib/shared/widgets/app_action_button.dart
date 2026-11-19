@@ -40,7 +40,7 @@ class AppActionButton extends StatelessWidget {
                   ),
                 )
                 : Icon(icon),
-        label: Text(label, style: TextStyle(fontSize: 16)),
+        label: Text(label, style: const TextStyle(fontSize: 16)),
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: foregroundColor,

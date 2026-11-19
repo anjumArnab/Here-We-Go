@@ -23,7 +23,7 @@ class RouteToggleButton extends StatelessWidget {
         final isNavigating = navigationProvider.isActive;
 
         return Container(
-          margin: EdgeInsets.only(right: AppTheme.spacingSmall),
+          margin: const EdgeInsets.only(right: AppTheme.spacingSmall),
           decoration: BoxDecoration(
             color: showRoutes ? AppTheme.primaryGreen : AppTheme.cardWhite,
             shape: BoxShape.circle,

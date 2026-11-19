@@ -91,7 +91,7 @@ class InteractivePane extends StatelessWidget {
 
   Widget _buildPageIndicator() {
     return Padding(
-      padding: EdgeInsets.only(
+      padding: const EdgeInsets.only(
         bottom: AppTheme.spacingSmall,
         top: AppTheme.spacingSmall - 2,
       ),
@@ -99,7 +99,7 @@ class InteractivePane extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(2, (index) {
           return Container(
-            margin: EdgeInsets.symmetric(horizontal: AppTheme.spacingXSmall),
+            margin: const EdgeInsets.symmetric(horizontal: AppTheme.spacingXSmall),
             width: currentPage == index ? 24 : 8,
             height: 8,
             decoration: BoxDecoration(
@@ -122,7 +122,7 @@ class InteractivePane extends StatelessWidget {
         final isConnecting = connectionProvider.isConnecting;
 
         return SingleChildScrollView(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.spacingMedium,
             vertical: AppTheme.spacingSmall,
           ),
@@ -138,8 +138,8 @@ class InteractivePane extends StatelessWidget {
                         isConnected ? AppTheme.successGreen : AppTheme.gray600,
                     size: 16,
                   ),
-                  SizedBox(width: AppTheme.spacingSmall - 2),
-                  Text(
+                  const SizedBox(width: AppTheme.spacingSmall - 2),
+                  const Text(
                     'Connect with your friends',
                     style: TextStyle(
                       fontSize: 14,
@@ -149,14 +149,14 @@ class InteractivePane extends StatelessWidget {
                   ),
                 ],
               ),
-              SizedBox(height: AppTheme.spacingSmall + 2),
+              const SizedBox(height: AppTheme.spacingSmall + 2),
               if (!isConnected) ...[
                 AppTextField(
                   controller: serverUrlController,
                   hint: 'https://abc123.ngrok.io',
                   icon: Icons.cloud,
                 ),
-                SizedBox(height: AppTheme.spacingSmall),
+                const SizedBox(height: AppTheme.spacingSmall),
                 Row(
                   children: [
                     Expanded(
@@ -166,7 +166,7 @@ class InteractivePane extends StatelessWidget {
                         icon: Icons.meeting_room,
                       ),
                     ),
-                    SizedBox(width: AppTheme.spacingSmall),
+                    const SizedBox(width: AppTheme.spacingSmall),
                     Expanded(
                       child: AppTextField(
                         controller: userIdController,
@@ -176,7 +176,7 @@ class InteractivePane extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: AppTheme.spacingSmall + 2),
+                const SizedBox(height: AppTheme.spacingSmall + 2),
                 AppActionButton(
                   label: isConnecting ? 'Connecting...' : 'Connect',
                   icon: Icons.link,
@@ -186,7 +186,7 @@ class InteractivePane extends StatelessWidget {
                 ),
               ] else ...[
                 _buildConnectionInfo(connectionProvider),
-                SizedBox(height: AppTheme.spacingSmall + 2),
+                const SizedBox(height: AppTheme.spacingSmall + 2),
                 AppActionButton(
                   label: 'Disconnect',
                   icon: Icons.link_off,
@@ -204,7 +204,7 @@ class InteractivePane extends StatelessWidget {
 
   Widget _buildConnectionInfo(ConnectionProvider connectionProvider) {
     return Container(
-      padding: EdgeInsets.all(AppTheme.spacingSmall),
+      padding: const EdgeInsets.all(AppTheme.spacingSmall),
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppTheme.gray100,
@@ -215,7 +215,7 @@ class InteractivePane extends StatelessWidget {
         'Connected with room ${connectionProvider.currentRoomId ?? "N/A"}\n'
         'You: ${connectionProvider.currentUserId ?? "N/A"}\n'
         'Friends: ${connectionProvider.roomUsers.length} online • ${connectionProvider.connectionStatusMessage ?? "Connected"}',
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 12,
           color: AppTheme.successGreen,
           fontWeight: FontWeight.w500,
@@ -233,7 +233,7 @@ class InteractivePane extends StatelessWidget {
         final hasLocation = currentLocation != null;
 
         return SingleChildScrollView(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: AppTheme.spacingMedium,
             vertical: AppTheme.spacingSmall,
           ),
@@ -249,8 +249,8 @@ class InteractivePane extends StatelessWidget {
                         hasLocation ? AppTheme.successGreen : AppTheme.gray600,
                     size: 16,
                   ),
-                  SizedBox(width: AppTheme.spacingSmall - 2),
-                  Text(
+                  const SizedBox(width: AppTheme.spacingSmall - 2),
+                  const Text(
                     'Send them your location',
                     style: TextStyle(
                       fontSize: 14,
@@ -261,9 +261,9 @@ class InteractivePane extends StatelessWidget {
                 ],
               ),
               if (hasLocation) ...[
-                SizedBox(height: AppTheme.spacingSmall + 2),
+                const SizedBox(height: AppTheme.spacingSmall + 2),
                 Container(
-                  padding: EdgeInsets.all(AppTheme.spacingSmall),
+                  padding: const EdgeInsets.all(AppTheme.spacingSmall),
                   decoration: BoxDecoration(
                     color: AppTheme.gray100,
                     borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
@@ -274,7 +274,7 @@ class InteractivePane extends StatelessWidget {
                       Expanded(
                         child: Text(
                           'You are currently on\nLat: ${currentLocation!.latitude.toStringAsFixed(5)} • Lng: ${currentLocation!.longitude.toStringAsFixed(5)}',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
                             color: AppTheme.infoBlue,
                           ),
@@ -286,7 +286,7 @@ class InteractivePane extends StatelessWidget {
                   ),
                 ),
               ],
-              SizedBox(height: AppTheme.spacingSmall + 2),
+              const SizedBox(height: AppTheme.spacingSmall + 2),
               AppActionButton(
                 label: isConnected ? 'Send Location' : 'Connect First',
                 icon: Icons.send,

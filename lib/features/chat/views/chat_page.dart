@@ -86,7 +86,7 @@ class _ChatPageState extends State<ChatPage> {
               children: [
                 Text(
                   roomId,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppTheme.textDark,
                     fontWeight: FontWeight.w600,
                     fontSize: 18,
@@ -94,7 +94,7 @@ class _ChatPageState extends State<ChatPage> {
                 ),
                 Text(
                   '$userCount ${userCount == 1 ? 'user' : 'users'} online',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppTheme.textGray,
                     fontSize: 12,
                     fontWeight: FontWeight.normal,
@@ -106,7 +106,7 @@ class _ChatPageState extends State<ChatPage> {
         ),
         backgroundColor: AppTheme.cardWhite,
         elevation: 1,
-        iconTheme: IconThemeData(color: AppTheme.textDark),
+        iconTheme: const IconThemeData(color: AppTheme.textDark),
       ),
       body: Consumer<ChatProvider>(
         builder: (context, chatProvider, _) {
@@ -142,7 +142,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -151,7 +151,7 @@ class _ChatPageState extends State<ChatPage> {
             size: 64,
             color: AppTheme.gray300,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             'No messages yet',
             style: TextStyle(
@@ -159,7 +159,7 @@ class _ChatPageState extends State<ChatPage> {
               fontSize: 16,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             'Start the conversation!',
             style: TextStyle(
@@ -199,7 +199,7 @@ class _ChatPageState extends State<ChatPage> {
               padding: const EdgeInsets.only(left: 12, bottom: 4),
               child: Text(
                 message.userId,
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppTheme.textGray,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -289,7 +289,7 @@ class _ChatPageState extends State<ChatPage> {
               minLines: 1,
               decoration: InputDecoration(
                 hintText: 'Type a message...',
-                hintStyle: TextStyle(color: AppTheme.gray300),
+                hintStyle: const TextStyle(color: AppTheme.gray300),
                 filled: true,
                 fillColor: AppTheme.backgroundLight,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -303,7 +303,7 @@ class _ChatPageState extends State<ChatPage> {
           ),
           const SizedBox(width: 8),
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppTheme.primaryGreen,
               shape: BoxShape.circle,
             ),

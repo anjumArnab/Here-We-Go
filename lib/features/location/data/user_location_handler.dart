@@ -79,7 +79,7 @@ class UserLocationHandler {
 
         if (opened) {
           // Wait for user to potentially enable GPS
-          await Future.delayed(Duration(seconds: 2));
+          await Future.delayed(const Duration(seconds: 2));
 
           // Check again after user returns
           serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -98,7 +98,7 @@ class UserLocationHandler {
       // Get current position
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 15),
+        timeLimit: const Duration(seconds: 15),
       );
 
       _currentLocation = LatLng(position.latitude, position.longitude);

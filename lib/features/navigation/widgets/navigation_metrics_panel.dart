@@ -27,7 +27,7 @@ class NavigationMetricsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(
+      margin: const EdgeInsets.symmetric(
         horizontal: AppTheme.spacingMedium,
         vertical: AppTheme.spacingSmall,
       ),
@@ -56,10 +56,10 @@ class NavigationMetricsPanel extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(AppTheme.spacingMedium),
+      padding: const EdgeInsets.all(AppTheme.spacingMedium),
       decoration: BoxDecoration(
         color: AppTheme.navigationBlue.withOpacity(0.1),
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(AppTheme.radiusLarge),
           topRight: Radius.circular(AppTheme.radiusLarge),
         ),
@@ -73,16 +73,16 @@ class NavigationMetricsPanel extends StatelessWidget {
               color: AppTheme.navigationBlue,
               borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
             ),
-            child: Icon(Icons.navigation, color: AppTheme.cardWhite, size: 20),
+            child: const Icon(Icons.navigation, color: AppTheme.cardWhite, size: 20),
           ),
-          SizedBox(width: AppTheme.spacingSmall),
+          const SizedBox(width: AppTheme.spacingSmall),
 
           // Title
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Navigating to',
                   style: TextStyle(
                     fontSize: 12,
@@ -93,7 +93,7 @@ class NavigationMetricsPanel extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   destinationUserId ?? 'Destination',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 16,
                     color: AppTheme.textDark,
                     fontWeight: FontWeight.w600,
@@ -113,7 +113,7 @@ class NavigationMetricsPanel extends StatelessWidget {
     if (metrics == null) return const SizedBox.shrink();
 
     return Container(
-      padding: EdgeInsets.symmetric(
+      padding: const EdgeInsets.symmetric(
         horizontal: AppTheme.spacingMedium,
         vertical: AppTheme.spacingSmall + 4,
       ),
@@ -125,10 +125,10 @@ class NavigationMetricsPanel extends StatelessWidget {
             },
           ),
 
-          SizedBox(height: AppTheme.spacingSmall + 4),
+          const SizedBox(height: AppTheme.spacingSmall + 4),
           // Progress bar
           _buildProgressBar(),
-          SizedBox(height: AppTheme.spacingSmall + 4),
+          const SizedBox(height: AppTheme.spacingSmall + 4),
 
           // Metrics row
           Row(
@@ -184,7 +184,7 @@ class NavigationMetricsPanel extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
+            const Text(
               'Progress',
               style: TextStyle(
                 fontSize: 12,
@@ -194,7 +194,7 @@ class NavigationMetricsPanel extends StatelessWidget {
             ),
             Text(
               '${metrics!.progressPercentage.toInt()}%',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 12,
                 color: AppTheme.navigationBlue,
                 fontWeight: FontWeight.w600,
@@ -210,7 +210,7 @@ class NavigationMetricsPanel extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progress,
             backgroundColor: AppTheme.gray200,
-            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.navigationBlue),
+            valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.navigationBlue),
             minHeight: 6,
           ),
         ),
@@ -227,7 +227,7 @@ class NavigationMetricsPanel extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 12,
             color: AppTheme.textGray,
             fontWeight: FontWeight.w500,
@@ -236,7 +236,7 @@ class NavigationMetricsPanel extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           value,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
             color: AppTheme.textDark,
             fontWeight: FontWeight.w600,
@@ -249,8 +249,8 @@ class NavigationMetricsPanel extends StatelessWidget {
 
   Widget _buildReroutingIndicator(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(AppTheme.spacingMedium),
-      child: Row(
+      padding: const EdgeInsets.all(AppTheme.spacingMedium),
+      child: const Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           SizedBox(
@@ -279,8 +279,8 @@ class NavigationMetricsPanel extends StatelessWidget {
 
   Widget _buildActions(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(AppTheme.spacingSmall + 4),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.all(AppTheme.spacingSmall + 4),
+      decoration: const BoxDecoration(
         color: AppTheme.backgroundLight,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(AppTheme.radiusLarge),
@@ -299,7 +299,7 @@ class NavigationMetricsPanel extends StatelessWidget {
               ),
             ),
 
-          if (onRecenter != null) SizedBox(width: AppTheme.spacingSmall),
+          if (onRecenter != null) const SizedBox(width: AppTheme.spacingSmall),
 
           // Stop navigation button
           Expanded(
@@ -371,7 +371,7 @@ class NavigationMetricsPanel extends StatelessWidget {
               onTap: () => onRouteModeChanged(mode),
               borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
               child: Container(
-                padding: EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   vertical: AppTheme.spacingSmall - 2,
                 ),
                 decoration: BoxDecoration(
