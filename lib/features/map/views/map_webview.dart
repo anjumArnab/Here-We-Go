@@ -2,7 +2,7 @@
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../models/map_marker_data.dart';
+import '../data/map_marker_data.dart';
 import 'map_assets.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_map/flutter_map.dart';

@@ -6,7 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'location_result.dart';
 import 'user_location.dart';
-import '../../../models/map_marker_data.dart';
+import '../../map/data/map_marker_data.dart';
 
 class UserLocationHandler {
   // Default location (Dhaka, Bangladesh)

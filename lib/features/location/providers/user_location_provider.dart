@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart';
 import '../data/user_location_handler.dart';
 import '../data/location_result.dart';
 import '../data/user_location.dart';
-import '../../../models/map_marker_data.dart';
+import '../../map/data/map_marker_data.dart';
 
 class UserLocationProvider extends ChangeNotifier {
   final UserLocationHandler _userLocationHandler;
