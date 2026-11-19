@@ -13,7 +13,7 @@ import 'services/chat_service.dart';
 import 'services/connection_service.dart';
 import 'services/location_service.dart';
 import 'services/navigation_service.dart';
-import 'services/notification_service.dart';
+import 'core/services/notification_service.dart';
 import 'services/route_service.dart';
 import 'services/user_location_handler.dart';
 

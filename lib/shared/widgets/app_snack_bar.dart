@@ -1,7 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:herewego/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 
 class AppSnackBar {
   /// Show a generic SnackBar with theme styling

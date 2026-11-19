@@ -3,7 +3,7 @@ import 'dart:developer' as developer;
 import '../core/constants/socket_events.dart';
 import '../core/network/socket_client.dart';
 import '../models/chat_message.dart';
-import 'notification_service.dart';
+import '../core/services/notification_service.dart';
 
 class ChatService {
   final SocketClient _socket;

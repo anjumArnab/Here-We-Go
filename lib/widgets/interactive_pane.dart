@@ -1,12 +1,12 @@
 // ignore_for_file: unused_local_variable, deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:herewego/widgets/app_chip_button.dart';
+import '../shared/widgets/app_chip_button.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'app_action_button.dart';
-import '../app_theme.dart';
-import '../widgets/app_text_field.dart';
+import '../shared/widgets/app_action_button.dart';
+import '../core/theme/app_theme.dart';
+import '../shared/widgets/app_text_field.dart';
 import '../providers/connection_provider.dart';
 
 class InteractivePane extends StatelessWidget {

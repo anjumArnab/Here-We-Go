@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/connection_provider.dart';
 import '../models/chat_message.dart';
-import '../app_theme.dart';
-import '../widgets/app_snack_bar.dart';
+import '../core/theme/app_theme.dart';
+import '../shared/widgets/app_snack_bar.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});

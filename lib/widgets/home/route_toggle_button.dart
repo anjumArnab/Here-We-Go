@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import '../../providers/location_provider.dart';
 import '../../providers/navigation_provider.dart';
 
