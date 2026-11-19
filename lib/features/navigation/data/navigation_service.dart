@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import '../core/constants/app_constants.dart';
-import '../models/navigation_state.dart';
-import '../models/navigation_metrics.dart';
-import '../models/user_location.dart';
-import '../features/routing/data/route_service.dart';
+import '../../../core/constants/app_constants.dart';
+import 'navigation_state.dart';
+import 'navigation_metrics.dart';
+import '../../../models/user_location.dart';
+import '../../routing/data/route_service.dart';
 
 class NavigationService {
   NavigationService(this._routeService);

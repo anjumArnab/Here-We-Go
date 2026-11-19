@@ -1,10 +1,10 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import '../features/routing/providers/route_provider.dart';
+import '../../routing/providers/route_provider.dart';
 import 'package:provider/provider.dart';
-import '../models/navigation_metrics.dart';
-import '../core/theme/app_theme.dart';
+import '../data/navigation_metrics.dart';
+import '../../../core/theme/app_theme.dart';
 
 class NavigationMetricsPanel extends StatelessWidget {
   final NavigationMetrics? metrics;

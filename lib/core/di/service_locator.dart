@@ -2,7 +2,7 @@ import 'package:get_it/get_it.dart';
 import '../../services/chat_service.dart';
 import '../../services/connection_service.dart';
 import '../../services/location_service.dart';
-import '../../services/navigation_service.dart';
+import '../../features/navigation/data/navigation_service.dart';
 import '../services/notification_service.dart';
 import '../../features/routing/data/route_service.dart';
 import '../../services/user_location_handler.dart';
