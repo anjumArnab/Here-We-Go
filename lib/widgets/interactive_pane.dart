@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import '../shared/widgets/app_action_button.dart';
 import '../core/theme/app_theme.dart';
 import '../shared/widgets/app_text_field.dart';
-import '../providers/connection_provider.dart';
+import '../features/connection/providers/connection_provider.dart';
 
 class InteractivePane extends StatelessWidget {
   final LatLng? currentLocation;

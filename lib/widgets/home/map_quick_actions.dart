@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/connection_provider.dart';
+import '../../features/connection/providers/connection_provider.dart';
 import '../../features/location/providers/location_provider.dart';
 import '../../shared/widgets/app_chip_button.dart';
 

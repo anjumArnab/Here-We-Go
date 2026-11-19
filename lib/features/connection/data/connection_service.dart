@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-import '../core/constants/app_constants.dart';
-import '../core/constants/socket_events.dart';
-import '../core/network/socket_client.dart';
-import '../models/connection_status.dart';
+import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/socket_events.dart';
+import '../../../core/network/socket_client.dart';
+import 'connection_status.dart';
 
 class ConnectionService {
   final SocketClient _socketClient;

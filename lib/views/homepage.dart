@@ -4,7 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:provider/provider.dart';
 import '../models/map_marker_data.dart';
 import '../providers/chat_provider.dart';
-import '../providers/connection_provider.dart';
+import '../features/connection/providers/connection_provider.dart';
 import '../features/navigation/providers/navigation_provider.dart';
 import '../shared/widgets/app_snack_bar.dart';
 import '../features/navigation/widgets/navigation_metrics_panel.dart';

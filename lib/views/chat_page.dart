@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
-import '../providers/connection_provider.dart';
+import '../features/connection/providers/connection_provider.dart';
 import '../models/chat_message.dart';
 import '../core/theme/app_theme.dart';
 import '../shared/widgets/app_snack_bar.dart';
