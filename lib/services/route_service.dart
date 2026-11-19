@@ -1,15 +1,18 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import '../core/constants/api_constants.dart';
+import '../core/network/api_client.dart';
+import '../core/network/api_exception.dart';
 import '../models/route_info.dart';
 import '../models/user_location.dart';
 import '../models/route_data.dart';
 
 class RouteService {
-  // OSRM API base URL
-  static const String osrmBaseUrl = "http://router.project-osrm.org/route/v1";
+  final ApiClient _apiClient;
+
+  RouteService({ApiClient? apiClient})
+    : _apiClient = apiClient ?? ApiClient(baseUrl: ApiConstants.osrmBaseUrl);
 
   // Route display settings
   String _routeMode = 'driving'; // driving, walking, cycling
@@ -70,49 +73,20 @@ class RouteService {
       return _routeCache[cacheKey]!;
     }
 
-    List<LatLng> routeCoordinates = [];
+    List<LatLng> routeCoordinates;
 
     try {
-      // Construct OSRM URL
-      String profile = _getOSRMProfile();
-      String coordinates =
+      final profile = _getOSRMProfile();
+      final coordinates =
           "${origin.longitude},${origin.latitude};${destination.longitude},${destination.latitude}";
-      String url =
-          "$osrmBaseUrl/$profile/$coordinates?overview=full&geometries=geojson";
 
-      final response = await http
-          .get(Uri.parse(url), headers: {'Content-Type': 'application/json'})
-          .timeout(Duration(seconds: 10));
+      final data = await _apiClient.get(
+        '${ApiConstants.osrmRoutePath}/$profile/$coordinates',
+        queryParameters: {'overview': 'full', 'geometries': 'geojson'},
+      );
 
-      if (response.statusCode == 200) {
-        Map<String, dynamic> data = json.decode(response.body);
-
-        if (data['code'] == 'Ok' &&
-            data['routes'] != null &&
-            data['routes'].isNotEmpty) {
-          var geometry = data['routes'][0]['geometry'];
-
-          if (geometry != null && geometry['coordinates'] != null) {
-            List<dynamic> coordinates = geometry['coordinates'];
-
-            routeCoordinates =
-                coordinates.map<LatLng>((coord) {
-                  return LatLng(
-                    coord[1].toDouble(),
-                    coord[0].toDouble(),
-                  ); // OSRM returns [lng, lat]
-                }).toList();
-          }
-        } else {
-          // Fallback to direct line
-          routeCoordinates = [origin, destination];
-        }
-      } else {
-        // Fallback to direct line
-        routeCoordinates = [origin, destination];
-      }
-    } catch (e) {
-
+      routeCoordinates = _parseRoute(data) ?? [origin, destination];
+    } on ApiException {
       // Fallback to direct line
       routeCoordinates = [origin, destination];
     }
@@ -123,6 +97,20 @@ class RouteService {
     }
 
     return routeCoordinates;
+  }
+
+  /// Extract polyline points from an OSRM response, or null if unusable.
+  List<LatLng>? _parseRoute(dynamic data) {
+    if (data is! Map || data['code'] != 'Ok') return null;
+    final routes = data['routes'];
+    if (routes is! List || routes.isEmpty) return null;
+    final coords = routes[0]['geometry']?['coordinates'];
+    if (coords is! List || coords.isEmpty) return null;
+
+    // OSRM returns [lng, lat]
+    return coords
+        .map<LatLng>((c) => LatLng(c[1].toDouble(), c[0].toDouble()))
+        .toList();
   }
 
   /// Generate routes data for flutter_map Polyline widgets
@@ -311,6 +299,7 @@ class RouteService {
 
   /// Dispose of resources
   void dispose() {
+    _apiClient.dispose();
     _selectedUsers.clear();
     _routeCache.clear();
   }
