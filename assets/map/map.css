@@ -1,0 +1,50 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#map {
+  height: 100%;
+  width: 100%;
+  background: #f0f0f0;
+}
+
+/* Custom marker styles */
+.custom-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.marker-current {
+  width: 28px;
+  height: 28px;
+  background: #3b82f6;
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.marker-user {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  font-size: 20px;
+}
+
+/* Remove Leaflet attribution */
+.leaflet-control-attribution {
+  display: none;
+}
