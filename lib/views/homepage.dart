@@ -158,23 +158,11 @@ class _HomepageState extends State<Homepage> {
     );
 
     if (mounted && success) {
-      // Get socket client from ConnectionProvider
-      final socket = connectionProvider.socketClient;
-      if (socket.hasSocket) {
-        // Initialize LocationProvider
-        locationProvider.initialize(
-          socket: socket,
-          roomId: _roomIdController.text.trim(),
-          userId: _userIdController.text.trim(),
-        );
+      final roomId = _roomIdController.text.trim();
+      final userId = _userIdController.text.trim();
 
-        // Initialize ChatProvider
-        chatProvider.initialize(
-          socket: socket,
-          roomId: _roomIdController.text.trim(),
-          userId: _userIdController.text.trim(),
-        );
-      }
+      locationProvider.initialize(roomId: roomId, userId: userId);
+      chatProvider.initialize(roomId: roomId, userId: userId);
       AppSnackBar.showSuccess(context, 'Connected successfully!');
     }
   }

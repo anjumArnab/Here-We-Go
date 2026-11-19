@@ -6,16 +6,11 @@ import '../models/chat_message.dart';
 import 'notification_service.dart';
 
 class ChatService {
-  // Singleton instance
-  static final ChatService _instance = ChatService._internal();
-  factory ChatService() => _instance;
-  ChatService._internal();
+  final SocketClient _socket;
 
-  // Socket reference
-  SocketClient? _socket;
+  ChatService(this._socket, this._notificationService);
 
-  // Notification service reference
-  final NotificationService _notificationService = NotificationService();
+  final NotificationService _notificationService;
 
   // Chat state
   String? _currentRoomId;
@@ -47,11 +42,9 @@ class ChatService {
 
   // Initialize with socket
   void initialize({
-    required SocketClient socket,
     required String roomId,
     required String userId,
   }) {
-    _socket = socket;
     _currentRoomId = roomId;
     _currentUserId = userId;
     _messages.clear();
@@ -62,14 +55,12 @@ class ChatService {
 
   // Set up chat event listeners
   void _setupChatListeners() {
-    if (_socket == null) return;
-
-    _socket!.on(SocketEvents.newMessage, (data) {
+    _socket.on(SocketEvents.newMessage, (data) {
       developer.log('New message received: $data');
       _handleNewMessage(data);
     });
 
-    _socket!.on(SocketEvents.chatHistory, (data) {
+    _socket.on(SocketEvents.chatHistory, (data) {
       developer.log('Chat history received');
       _handleChatHistory(data);
     });
@@ -109,7 +100,7 @@ class ChatService {
 
   // Send a message
   Future<bool> sendMessage(String message) async {
-    if (_socket == null) {
+    if (!_socket.hasSocket) {
       _errorController.add('Not connected to server');
       return false;
     }
@@ -126,7 +117,7 @@ class ChatService {
 
     try {
       developer.log('Sending message: $message');
-      _socket!.emit(SocketEvents.sendMessage, {
+      _socket.emit(SocketEvents.sendMessage, {
         'roomId': _currentRoomId,
         'userId': _currentUserId,
         'message': message.trim(),
@@ -141,14 +132,14 @@ class ChatService {
 
   // Request chat history
   Future<void> requestChatHistory() async {
-    if (_socket == null || _currentRoomId == null) {
+    if (!_socket.hasSocket || _currentRoomId == null) {
       _errorController.add('Not connected to server or room');
       return;
     }
 
     try {
       developer.log('Requesting chat history');
-      _socket!.emit(SocketEvents.getChatHistory, {'roomId': _currentRoomId});
+      _socket.emit(SocketEvents.getChatHistory, {'roomId': _currentRoomId});
     } catch (e) {
       developer.log('Error requesting chat history: $e');
       _errorController.add('Failed to get chat history: $e');
@@ -173,7 +164,6 @@ class ChatService {
     _unreadCount = 0;
     _currentRoomId = null;
     _currentUserId = null;
-    _socket = null;
   }
 
   // Dispose resources

@@ -5,13 +5,9 @@ import '../core/network/socket_client.dart';
 import '../models/user_location.dart';
 
 class LocationService {
-  // Singleton instance
-  static final LocationService _instance = LocationService._internal();
-  factory LocationService() => _instance;
-  LocationService._internal();
+  final SocketClient _socket;
 
-  // Socket reference
-  SocketClient? _socket;
+  LocationService(this._socket);
 
   // Location state
   String? _currentRoomId;
@@ -41,11 +37,9 @@ class LocationService {
 
   // Initialize with socket
   void initialize({
-    required SocketClient socket,
     required String roomId,
     required String userId,
   }) {
-    _socket = socket;
     _currentRoomId = roomId;
     _currentUserId = userId;
     _userLocations.clear();
@@ -57,28 +51,26 @@ class LocationService {
 
   // Set up location related event listeners
   void _setupLocationListeners() {
-    if (_socket == null) return;
-
-    _socket!.on(SocketEvents.locationUpdate, (data) {
+    _socket.on(SocketEvents.locationUpdate, (data) {
       developer.log('Location update received: ${data['userId']}');
       _handleLocationUpdate(data);
     });
 
-    _socket!.on(SocketEvents.existingLocations, (data) {
+    _socket.on(SocketEvents.existingLocations, (data) {
       developer.log('Existing locations received');
       _handleExistingLocations(data);
     });
 
-    _socket!.on(SocketEvents.allLocations, (data) {
+    _socket.on(SocketEvents.allLocations, (data) {
       developer.log('All locations received');
       _handleAllLocations(data);
     });
 
-    _socket!.on(SocketEvents.locationShared, (data) {
+    _socket.on(SocketEvents.locationShared, (data) {
       developer.log('Location shared successfully');
     });
 
-    _socket!.on(SocketEvents.userLeft, (data) {
+    _socket.on(SocketEvents.userLeft, (data) {
       developer.log('User left, removing location: ${data['userId']}');
       _handleUserLeft(data);
     });
@@ -129,7 +121,7 @@ class LocationService {
     required double latitude,
     required double longitude,
   }) async {
-    if (_socket == null) {
+    if (!_socket.hasSocket) {
       _errorController.add('Not connected to server');
       return false;
     }
@@ -142,7 +134,7 @@ class LocationService {
     try {
       developer.log('Sharing location: $latitude, $longitude');
 
-      _socket!.emit(SocketEvents.shareLocation, {
+      _socket.emit(SocketEvents.shareLocation, {
         'roomId': _currentRoomId,
         'userId': _currentUserId,
         'latitude': latitude,
@@ -169,14 +161,14 @@ class LocationService {
 
   // Request all current locations in room
   Future<void> requestAllLocations() async {
-    if (_socket == null || _currentRoomId == null) {
+    if (!_socket.hasSocket || _currentRoomId == null) {
       _errorController.add('Not connected to server or room');
       return;
     }
 
     try {
       developer.log('Requesting all locations');
-      _socket!.emit(SocketEvents.getAllLocations, {'roomId': _currentRoomId});
+      _socket.emit(SocketEvents.getAllLocations, {'roomId': _currentRoomId});
     } catch (e) {
       developer.log('Error requesting locations: $e');
       _errorController.add('Failed to get locations: $e');
@@ -205,7 +197,6 @@ class LocationService {
     _userLocations.clear();
     _currentRoomId = null;
     _currentUserId = null;
-    _socket = null;
   }
 
   // Dispose all resources

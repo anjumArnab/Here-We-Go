@@ -8,13 +8,22 @@ import 'providers/location_provider.dart';
 import 'providers/route_provider.dart';
 import 'providers/user_location_provider.dart';
 import 'providers/navigation_provider.dart';
-import '../services/notification_service.dart';
+import 'core/di/service_locator.dart';
+import 'services/chat_service.dart';
+import 'services/connection_service.dart';
+import 'services/location_service.dart';
+import 'services/navigation_service.dart';
+import 'services/notification_service.dart';
+import 'services/route_service.dart';
+import 'services/user_location_handler.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  setupServiceLocator();
+
   // Initialize notification service
-  await NotificationService().initialize();
+  await sl<NotificationService>().initialize();
 
   runApp(const HereWeGo());
 }
@@ -26,12 +35,22 @@ class HereWeGo extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ConnectionProvider()),
-        ChangeNotifierProvider(create: (_) => LocationProvider()),
-        ChangeNotifierProvider(create: (_) => RouteProvider()),
-        ChangeNotifierProvider(create: (_) => UserLocationProvider()),
-        ChangeNotifierProvider(create: (_) => NavigationProvider()),
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(
+          create: (_) => ConnectionProvider(sl<ConnectionService>()),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => LocationProvider(sl<LocationService>()),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => RouteProvider(sl<RouteService>()),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => UserLocationProvider(sl<UserLocationHandler>()),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => NavigationProvider(sl<NavigationService>()),
+        ),
+        ChangeNotifierProvider(create: (_) => ChatProvider(sl<ChatService>())),
       ],
       child: MaterialApp(
         title: 'Here We Go',

@@ -9,13 +9,10 @@ import '../models/user_location.dart';
 import 'route_service.dart';
 
 class NavigationService {
-  // Singleton instance
-  static final NavigationService _instance = NavigationService._internal();
-  factory NavigationService() => _instance;
-  NavigationService._internal();
+  NavigationService(this._routeService);
 
   // Services
-  final RouteService _routeService = RouteService();
+  final RouteService _routeService;
 
   // State
   NavigationState _state = NavigationState.idle();

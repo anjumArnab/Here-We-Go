@@ -7,7 +7,7 @@ import '../models/navigation_metrics.dart';
 import '../models/user_location.dart';
 
 class NavigationProvider extends ChangeNotifier {
-  final NavigationService _navigationService = NavigationService();
+  final NavigationService _navigationService;
 
   // Stream subscriptions
   StreamSubscription<NavigationState>? _stateSubscription;
@@ -40,7 +40,7 @@ class NavigationProvider extends ChangeNotifier {
   double get distanceRemaining => _state.distanceRemaining;
   double? get estimatedTimeArrival => _state.estimatedTimeArrival;
 
-  NavigationProvider() {
+  NavigationProvider(this._navigationService) {
     _setupListeners();
   }
 

@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import '../core/network/socket_client.dart';
 import '../services/location_service.dart';
 import '../models/user_location.dart';
 
 class LocationProvider extends ChangeNotifier {
-  final LocationService _locationService = LocationService();
+  final LocationService _locationService;
 
   // Stream subscriptions
   StreamSubscription<Map<String, UserLocation>>? _allLocationsSubscription;
@@ -24,7 +23,7 @@ class LocationProvider extends ChangeNotifier {
   UserLocation? get lastLocationUpdate => _lastLocationUpdate;
   bool get isInitialized => _isInitialized;
   
-  LocationProvider() {
+  LocationProvider(this._locationService) {
     _setupListeners();
   }
 
@@ -45,14 +44,12 @@ class LocationProvider extends ChangeNotifier {
     });
   }
 
-  // Initialize with socket from ConnectionProvider
+  // Initialize for the joined room
   void initialize({
-    required SocketClient socket,
     required String roomId,
     required String userId,
   }) {
     _locationService.initialize(
-      socket: socket,
       roomId: roomId,
       userId: userId,
     );

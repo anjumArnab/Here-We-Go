@@ -6,13 +6,9 @@ import '../core/network/socket_client.dart';
 import '../models/connection_status.dart';
 
 class ConnectionService {
-  // Singleton instance
-  static final ConnectionService _instance = ConnectionService._internal();
-  factory ConnectionService() => _instance;
-  ConnectionService._internal();
+  final SocketClient _socketClient;
 
-  // Shared socket connection
-  final SocketClient _socketClient = SocketClient();
+  ConnectionService(this._socketClient);
 
   // Connection state
   bool _isConnected = false;
@@ -40,7 +36,6 @@ class ConnectionService {
   String? get currentRoomId => _currentRoomId;
   String? get currentUserId => _currentUserId;
   List<String> get roomUsers => List.unmodifiable(_roomUsers);
-  SocketClient get socketClient => _socketClient;
 
   // Connect to server and join room
   Future<bool> connectToServer({

@@ -299,7 +299,6 @@ class RouteService {
 
   /// Dispose of resources
   void dispose() {
-    _apiClient.dispose();
     _selectedUsers.clear();
     _routeCache.clear();
   }

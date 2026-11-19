@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import '../core/network/socket_client.dart';
 import '../services/chat_service.dart';
 import '../models/chat_message.dart';
 
 class ChatProvider extends ChangeNotifier {
-  final ChatService _chatService = ChatService();
+  final ChatService _chatService;
 
   // Stream subscriptions
   StreamSubscription<ChatMessage>? _newMessageSubscription;
@@ -26,7 +25,7 @@ class ChatProvider extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   String? get currentUserId => _chatService.currentUserId;
 
-  ChatProvider() {
+  ChatProvider(this._chatService) {
     _setupListeners();
   }
 
@@ -52,14 +51,12 @@ class ChatProvider extends ChangeNotifier {
     });
   }
 
-  // Initialize with socket from ConnectionProvider
+  // Initialize for the joined room
   void initialize({
-    required SocketClient socket,
     required String roomId,
     required String userId,
   }) {
     _chatService.initialize(
-      socket: socket,
       roomId: roomId,
       userId: userId,
     );

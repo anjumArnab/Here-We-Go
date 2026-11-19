@@ -6,7 +6,9 @@ import '../models/route_info.dart';
 import '../models/user_location.dart';
 
 class RouteProvider extends ChangeNotifier {
-  final RouteService _routeService = RouteService();
+  final RouteService _routeService;
+
+  RouteProvider(this._routeService);
 
   // State
   bool _isLoadingRoutes = false;

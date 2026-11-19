@@ -7,7 +7,9 @@ import '../models/user_location.dart';
 import '../models/map_marker_data.dart';
 
 class UserLocationProvider extends ChangeNotifier {
-  final UserLocationHandler _userLocationHandler = UserLocationHandler();
+  final UserLocationHandler _userLocationHandler;
+
+  UserLocationProvider(this._userLocationHandler);
 
   // State
   bool _isLoadingLocation = false;
