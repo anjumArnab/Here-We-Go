@@ -1,5 +1,5 @@
 import 'package:latlong2/latlong.dart';
-import '../../../models/user_location.dart';
+import '../../location/data/user_location.dart';
 
 enum NavigationStatus { idle, navigating, rerouting, arrived }
 

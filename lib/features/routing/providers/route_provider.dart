@@ -3,7 +3,7 @@ import 'package:latlong2/latlong.dart';
 import '../data/route_service.dart';
 import '../data/route_data.dart';
 import '../data/route_info.dart';
-import '../../../models/user_location.dart';
+import '../../location/data/user_location.dart';
 
 class RouteProvider extends ChangeNotifier {
   final RouteService _routeService;

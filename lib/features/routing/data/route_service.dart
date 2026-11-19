@@ -5,7 +5,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_exception.dart';
 import 'route_info.dart';
-import '../../../models/user_location.dart';
+import '../../location/data/user_location.dart';
 import 'route_data.dart';
 
 class RouteService {

@@ -1,4 +1,4 @@
-import '../../../models/user_location.dart';
+import '../../location/data/user_location.dart';
 
 class RouteInfo {
   final String userId;

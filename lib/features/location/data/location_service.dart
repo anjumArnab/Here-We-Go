@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-import '../core/constants/socket_events.dart';
-import '../core/network/socket_client.dart';
-import '../models/user_location.dart';
+import '../../../core/constants/socket_events.dart';
+import '../../../core/network/socket_client.dart';
+import 'user_location.dart';
 
 class LocationService {
   final SocketClient _socket;

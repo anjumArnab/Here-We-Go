@@ -5,7 +5,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../core/constants/app_constants.dart';
 import 'navigation_state.dart';
 import 'navigation_metrics.dart';
-import '../../../models/user_location.dart';
+import '../../location/data/user_location.dart';
 import '../../routing/data/route_service.dart';
 
 class NavigationService {

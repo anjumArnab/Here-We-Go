@@ -4,18 +4,18 @@ import 'package:provider/provider.dart';
 import '../views/homepage.dart';
 import 'providers/chat_provider.dart';
 import 'providers/connection_provider.dart';
-import 'providers/location_provider.dart';
+import 'features/location/providers/location_provider.dart';
 import 'features/routing/providers/route_provider.dart';
-import 'providers/user_location_provider.dart';
+import 'features/location/providers/user_location_provider.dart';
 import 'features/navigation/providers/navigation_provider.dart';
 import 'core/di/service_locator.dart';
 import 'services/chat_service.dart';
 import 'services/connection_service.dart';
-import 'services/location_service.dart';
+import 'features/location/data/location_service.dart';
 import 'features/navigation/data/navigation_service.dart';
 import 'core/services/notification_service.dart';
 import 'features/routing/data/route_service.dart';
-import 'services/user_location_handler.dart';
+import 'features/location/data/user_location_handler.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

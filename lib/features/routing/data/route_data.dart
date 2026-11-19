@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
-import '../../../models/user_location.dart';
+import '../../location/data/user_location.dart';
 
 class RouteData {
   final String userId;

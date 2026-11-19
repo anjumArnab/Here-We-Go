@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart';
 import '../data/navigation_service.dart';
 import '../data/navigation_state.dart';
 import '../data/navigation_metrics.dart';
-import '../../../models/user_location.dart';
+import '../../location/data/user_location.dart';
 
 class NavigationProvider extends ChangeNotifier {
   final NavigationService _navigationService;

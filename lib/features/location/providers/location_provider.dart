@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import '../services/location_service.dart';
-import '../models/user_location.dart';
+import '../data/location_service.dart';
+import '../data/user_location.dart';
 
 class LocationProvider extends ChangeNotifier {
   final LocationService _locationService;
