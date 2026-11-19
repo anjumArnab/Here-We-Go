@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
-import '../../providers/chat_provider.dart';
+import '../../features/chat/providers/chat_provider.dart';
 import '../../features/connection/providers/connection_provider.dart';
-import '../../views/chat_page.dart';
+import '../../features/chat/views/chat_page.dart';
 
 /// App bar chat button with an unread-messages badge.
 class ChatActionButton extends StatelessWidget {

@@ -1,5 +1,5 @@
 import 'package:get_it/get_it.dart';
-import '../../services/chat_service.dart';
+import '../../features/chat/data/chat_service.dart';
 import '../../features/connection/data/connection_service.dart';
 import '../../features/location/data/location_service.dart';
 import '../../features/navigation/data/navigation_service.dart';
