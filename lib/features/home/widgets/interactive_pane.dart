@@ -41,43 +41,40 @@ class InteractivePane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned(
-      bottom: 10,
-      left: 10,
-      child: Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.35,
-        ),
-        decoration: BoxDecoration(
-          color: AppTheme.cardWhite,
-          borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
-          boxShadow: [AppTheme.cardShadow],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(),
-            if (isExpanded)
-              Flexible(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: PageView(
-                        controller: pageController,
-                        onPageChanged: onPageChanged,
-                        children: [
-                          _buildServerConnectionSection(context),
-                          _buildLocationSenderSection(context),
-                        ],
-                      ),
+    return Container(
+      margin: const EdgeInsets.only(left: 10, right: 10, bottom: 10),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.35,
+      ),
+      decoration: BoxDecoration(
+        color: AppTheme.cardWhite,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        boxShadow: [AppTheme.cardShadow],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHeader(),
+          if (isExpanded)
+            Flexible(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: PageView(
+                      controller: pageController,
+                      onPageChanged: onPageChanged,
+                      children: [
+                        _buildServerConnectionSection(context),
+                        _buildLocationSenderSection(context),
+                      ],
                     ),
-                    _buildPageIndicator(),
-                  ],
-                ),
+                  ),
+                  _buildPageIndicator(),
+                ],
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -99,7 +96,9 @@ class InteractivePane extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(2, (index) {
           return Container(
-            margin: const EdgeInsets.symmetric(horizontal: AppTheme.spacingXSmall),
+            margin: const EdgeInsets.symmetric(
+              horizontal: AppTheme.spacingXSmall,
+            ),
             width: currentPage == index ? 24 : 8,
             height: 8,
             decoration: BoxDecoration(
