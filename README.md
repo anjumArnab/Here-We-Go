@@ -5,7 +5,7 @@ Here We Go is a real-time location tracking and navigation application built wit
 ## Features
 
 - **Real-Time Location Sharing & WebSocket Communication:** Implements bidirectional Socket.IO WebSocket connections for real-time location broadcasting. The `ConnectionService` manages socket lifecycle with automatic reconnection (5 attempts, 1s delay), while `LocationService` handles location updates with timestamps. Backend maintains in-memory Maps for room state, user locations, and session management with automatic cleanup on disconnection.
-- **Interactive Mapping with Custom WebView Integration:** Custom `Leaflet.js` implementation embedded in Flutter WebView with JavaScript channel communication for native-to-web control. Supports programmatic map manipulation (zoom, pan, bounds fitting), dynamic marker rendering with custom SVG pins, and real-time polyline updates. Achieves native performance through message passing between Flutter and embedded web context.
+- **Native Interactive Mapping:** `flutter_map` renders OpenStreetMap tiles with no WebView or JavaScript bridge. `AppMap` supports custom Flutter-widget markers (location pins with name labels), solid and dotted route polylines, tap and long-press handling, and an `AppMapController` for programmatic camera moves (with screen offset) and fitting all points in view.
 - **Navigation with Automatic Rerouting:** Implements continuous GPS tracking (5m distance filter, high accuracy mode) with state machine transitions (idle, navigating, rerouting, arrived). Monitors route deviation with 50m threshold and triggers OSRM API recalculation with 15s debounce. Calculates live metrics (distance, ETA, speed) from Position streams and handles dynamic destination updates when target user moves.
 - **OSRM-Based Route Calculation with Caching:** Integrates Open Source Routing Machine API for multi-modal routing (driving/walking/cycling). Implements composite key caching (origin-destination-mode) to minimize API calls. Parses GeoJSON geometry responses and converts to LatLng polyline coordinates. Includes 10s timeout with direct-line fallback on API failure.
 - **Group Chat with Server-Side Persistence:** Message storage with unique IDs (timestamp with random string) maintained per room on backend. `ChatService` manages ordered message lists with stream based updates. Integrates Flutter Local Notifications with platform-specific channels (Android/iOS) and app lifecycle monitoring for background message alerts.
@@ -14,10 +14,10 @@ Here We Go is a real-time location tracking and navigation application built wit
 
 ## Technical Stack
 
-- **Frontend:** Flutter, Provider, Geolocator, WebView, Flutter Local Notifications
+- **Frontend:** Flutter, Provider, get_it, Geolocator, flutter_map, Flutter Local Notifications
 - **Backend:** Node.js, Express, Socket.IO, CORS
-- **Mapping:** OpenStreetMap tiles, Leaflet.js, OSRM API
-- **Communication:** WebSocket (Socket.IO), JavaScript Channel (WebView Bridge)
+- **Mapping:** OpenStreetMap tiles, flutter_map, OSRM API
+- **Communication:** WebSocket (Socket.IO)
 - **State:** Singleton services, Stream based reactivity, In memory caching
 
 ## Project Structure
@@ -38,11 +38,10 @@ lib/
     ├── chat/        # data/ providers/ views/
     ├── connection/  # data/ providers/
     ├── location/    # data/ providers/
-    ├── map/         # data/ views/   (Leaflet page lives in assets/map/)
+    ├── map/         # data/ views/ widgets/   (AppMap built on flutter_map)
     ├── navigation/  # data/ providers/ widgets/
     ├── routing/     # data/ providers/
     └── home/        # views/ widgets/
-assets/map/          # map.html, map.css, map.js loaded into the WebView
 test/                # unit tests mirroring lib/
 ```
 

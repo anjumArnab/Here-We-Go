@@ -9,7 +9,7 @@ import '../../navigation/providers/navigation_provider.dart';
 import '../../../shared/widgets/app_snack_bar.dart';
 import '../../navigation/widgets/navigation_metrics_panel.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../map/views/map_webview.dart';
+import '../../map/views/app_map.dart';
 import '../../location/providers/location_provider.dart';
 import '../../routing/providers/route_provider.dart';
 import '../../location/providers/user_location_provider.dart';
@@ -31,7 +31,7 @@ class Homepage extends StatefulWidget {
 }
 
 class _HomepageState extends State<Homepage> {
-  final MapWebViewController _mapController = MapWebViewController();
+  final AppMapController _mapController = AppMapController();
   List<MapMarkerData> _markers = [];
   List<Polyline> _polylines = [];
 
@@ -55,7 +55,11 @@ class _HomepageState extends State<Homepage> {
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    // Providers notify listeners synchronously, which is not allowed while
+    // the widget tree is building, so wait until the first frame is done.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_initializeApp());
+    });
     _setupNavigationListener();
   }
 
@@ -318,6 +322,10 @@ class _HomepageState extends State<Homepage> {
               points: route.points,
               color: route.color,
               strokeWidth: route.strokeWidth,
+              pattern:
+                  route.isDotted
+                      ? const StrokePattern.dotted()
+                      : const StrokePattern.solid(),
             );
           }).toList();
 
@@ -624,7 +632,7 @@ class _HomepageState extends State<Homepage> {
           return SafeArea(
             child: Stack(
               children: [
-                MapWebView(
+                AppMap(
                   controller: _mapController,
                   initialCenter: userLocationProvider.currentLocation!,
                   initialZoom: 15.0,
