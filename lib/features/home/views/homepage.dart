@@ -55,7 +55,11 @@ class _HomepageState extends State<Homepage> {
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    // Providers notify listeners synchronously, which is not allowed while
+    // the widget tree is building, so wait until the first frame is done.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_initializeApp());
+    });
     _setupNavigationListener();
   }
 
